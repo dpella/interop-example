@@ -31,7 +31,7 @@ employees =
 
 
 sumQuery :: IsString a => a
-sumQuery = "SELECT SUM(CAST(age as DOUBLE)) + dpella_sample_random(18.0,67.0) FROM employees"
+sumQuery = "SELECT SUM(CAST(age as FLOAT)) + dpella_sample_random(18.0,67.0) FROM employees"
 
 insertQuery :: IsString a => a
 insertQuery = "INSERT INTO employees (name, age, is_employed) VALUES (?, ?, ?)"

@@ -81,9 +81,6 @@ COPY dpella-base ./dpella-base
 COPY dpella-sqlite ./dpella-sqlite
 COPY dpella-postgres ./dpella-postgres
 
-COPY example ./example
-
-
 USER root
 RUN chown -R $USER_NAME:$USER_NAME /app
 
@@ -93,13 +90,14 @@ RUN cabal build all --only-dependencies
 
 USER root
 COPY dpella-ffi ./dpella-ffi
+COPY example ./example
 RUN chown -R $USER_NAME:$USER_NAME /app
 
 USER $USER_NAME
 
 # Add the ffi library to the project
 RUN echo "packages: */*.cabal" > cabal.project.local
-RUN cabal build dpella-ffi
+RUN cabal build all
 
 USER root
 
