@@ -81,6 +81,8 @@ COPY dpella-base ./dpella-base
 COPY dpella-sqlite ./dpella-sqlite
 COPY dpella-postgres ./dpella-postgres
 
+COPY example ./example
+
 
 USER root
 RUN chown -R $USER_NAME:$USER_NAME /app
@@ -132,7 +134,7 @@ RUN cat <<EOF > /usr/local/bin/entrypoint
 #!/bin/bash
 sudo service postgresql start
 /docker-entrypoint-initdb.d/init-postgresql.sh
-exec "\$@"
+cabal run example 
 EOF
 RUN chmod +x /usr/local/bin/entrypoint
 

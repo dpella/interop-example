@@ -10,6 +10,7 @@ import Data.Text (Text)
 import qualified Data.ByteString.Char8 as BS
 import qualified DPella.Postgres as PG
 import qualified DPella.SQLite as SQL
+import Data.String (IsString)
 
 
 -- Define the data structure for employees
@@ -28,37 +29,43 @@ employees =
   , Employee "Diana" 29 True
   ]
 
+
+sumQuery :: IsString a => a
+sumQuery = "SELECT SUM(CAST(age as DOUBLE)) + dpella_sample_random(18.0,67.0) FROM employees"
+
+insertQuery :: IsString a => a
+insertQuery = "INSERT INTO employees (name, age, is_employed) VALUES (?, ?, ?)"
+
+createTableQuery :: (Semigroup a, IsString a) => a
+createTableQuery = 
+  "CREATE TABLE IF NOT EXISTS employees "
+  <> "(id SERIAL PRIMARY KEY, "
+  <> " name TEXT NOT NULL,"
+  <> " age INTEGER NOT NULL,"
+  <> " is_employed BOOLEAN NOT NULL)"
+
 -- SQLite Example
 runSQLiteExample :: IO ()
 runSQLiteExample = SQL.runSQLite ":memory:" $ do
   liftIO $ putStrLn "--- Running SQLite Example ---"
-
   -- Create table
-  _ <- SQL.execute_ [SQL.sql|
-    CREATE TABLE IF NOT EXISTS employees (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      age INTEGER NOT NULL,
-      is_employed BOOLEAN NOT NULL
-    )
-  |]
+  _ <- SQL.execute_ createTableQuery
   liftIO $ putStrLn "SQLite table 'employees' created."
 
   -- Insert data
   forM_ employees $ \emp -> do
-    SQL.execute
-      "INSERT INTO employees (name, age, is_employed) VALUES (?, ?, ?)"
+    SQL.execute insertQuery
       (empName emp, empAge emp, empIsEmployed emp)
   liftIO $ putStrLn $ "Inserted " <> show (length employees) <> " records into SQLite."
 
-  -- Query sum of ages
-  [SQL.Only totalAge] :: [SQL.Only Int] <- SQL.query_ "SELECT SUM(age) FROM employees"
-  liftIO $ putStrLn $ "Sum of ages (SQLite): " <> show totalAge
+  -- Query sum of ages 4 times, to show randomness
+  forM_ [1 :: Int ..4] $ \_ -> do
+    [SQL.Only totalAge] :: [SQL.Only Double] <- SQL.query_ sumQuery
+    liftIO $ putStrLn $ "Sum of ages (with noise) (SQLite): " <> show totalAge
 
 -- PostgreSQL Example
 runPostgresExample :: IO ()
 runPostgresExample = do
-    -- NOTE: Replace with your actual connection string or use environment variables
     let connStr = "host=localhost port=5432 dbname=test user=test password=test"
     putStrLn "\n--- Running PostgreSQL Example ---"
     putStrLn $ "Connecting to: " <> connStr
@@ -66,26 +73,19 @@ runPostgresExample = do
 
       -- Drop and Create table
       _ <- PG.execute_ "DROP TABLE IF EXISTS employees;"
-      _ <- PG.execute_ [PG.sql|
-        CREATE TABLE employees (
-          id SERIAL PRIMARY KEY,
-          name TEXT NOT NULL,
-          age INTEGER NOT NULL,
-          is_employed BOOLEAN NOT NULL
-        )
-      |]
+      _ <- PG.execute_ createTableQuery
       liftIO $ putStrLn "PostgreSQL table 'employees' created."
 
       -- Insert data
       forM_ employees $ \emp -> do
-        PG.execute
-          "INSERT INTO employees (name, age, is_employed) VALUES (?, ?, ?)"
+        PG.execute insertQuery
           (empName emp, empAge emp, empIsEmployed emp)
       liftIO $ putStrLn $ "Inserted " <> show (length employees) <> " records into PostgreSQL."
 
-      -- Query sum of ages
-      [PG.Only totalAge] :: [PG.Only Int] <- PG.query_ "SELECT SUM(age) FROM employees"
-      liftIO $ putStrLn $ "Sum of ages (PostgreSQL): " <> show totalAge
+       -- Query sum of ages 4 times, to show randomness
+      forM_ [1 :: Int ..4] $ \_ -> do
+        [PG.Only totalAge] :: [PG.Only Double] <- PG.query_ sumQuery
+        liftIO $ putStrLn $ "Sum of ages (PostgreSQL): " <> show totalAge
 
 main :: IO ()
 main = do

@@ -43,23 +43,19 @@ module DPella.SQLite (
   SQLite.sql,
 ) where
 
-import Control.Monad (when)
+import Control.Monad (when, forM_)
 import Control.Monad.Catch (MonadCatch, MonadMask, MonadThrow, mask, onException, try)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Reader (ReaderT, ask, runReaderT)
 import Control.Monad.Trans (MonadTrans)
-import Data.Text (Text)
 import Data.Text qualified as Text
 import Database.SQLite.Simple (SQLData (..))
-import Database.SQLite.Simple qualified as SQLite
 import Database.SQLite.Simple.FromField qualified as SQLite
 import Database.SQLite.Simple.FromRow qualified as SQLite
 import Database.SQLite.Simple.QQ qualified as SQLite
 import Database.SQLite.Simple.ToField qualified as SQLite
 
 import Control.Exception (throwIO)
-import Control.Monad (forM_)
-import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Text (Text)
 import Database.SQLite.Simple qualified as SQLite
 import Database.SQLite.Simple.Function qualified as SQLite

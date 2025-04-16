@@ -3,9 +3,9 @@ set -e
 
 # Initialize PostgreSQL database
 sudo -u postgres psql <<EOF
-CREATE USER dpella WITH PASSWORD 'dpella' CREATEDB;
-CREATE DATABASE dpella;
-GRANT ALL PRIVILEGES ON DATABASE dpella TO dpella;
+CREATE USER test WITH PASSWORD 'test' CREATEDB;
+CREATE DATABASE test;
+GRANT ALL PRIVILEGES ON DATABASE test TO test;
 \c dpella
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "dpella-ffi-ext";
