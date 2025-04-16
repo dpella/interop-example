@@ -22,6 +22,35 @@ Run the example (executes `app/Main.hs` within the Docker container):
 docker run  sqlinteroperability-example
 ```
 
+Output:
+```plaintext
+--- Running SQLite Example ---
+SQLite table 'employees' created.
+Inserted 4 records into SQLite.
+Sum of ages (with noise) (SQLite): 171.1366419561398
+Sum of ages (with noise) (SQLite): 148.75287169458687
+Sum of ages (with noise) (SQLite): 160.61467033334398
+Sum of ages (with noise) (SQLite): 158.95724915195856
+
+--- Running PostgreSQL Example ---
+Connecting to: postgres://test:test@localhost:5432/test
+PostgreSQL table 'employees' created.
+Inserted 4 records into PostgreSQL.
+Sum of ages (PostgreSQL): 166.50913874804027
+Sum of ages (PostgreSQL): 190.64541265429347
+Sum of ages (PostgreSQL): 190.05762465442217
+Sum of ages (PostgreSQL): 183.1843888581907
+
+--- Running MySQL Example ---
+Connecting to: mysql://test:test@localhost:3306/test
+MySQL table 'employees' created.
+Inserted 4 records into MySQL.
+Sum of ages (MySQL): 153.09850998336447
+Sum of ages (MySQL): 150.8886262387034
+Sum of ages (MySQL): 152.52728376912134
+Sum of ages (MySQL): 176.15142166159143
+```
+
 ## **3. Overview**
 
 This repository demonstrates how to integrate the custom Haskell function `dpella_sample_random` into SQL queries across SQLite, PostgreSQL, and MySQL. The general approach involves:
