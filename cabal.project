@@ -1,3 +1,4 @@
 packages: dpella-base/*.cabal
           dpella-postgres/*.cabal
           dpella-sqlite/*.cabal
+          example/*.cabal

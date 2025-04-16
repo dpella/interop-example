@@ -1,15 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
 
 import Control.Monad (forM_)
 import Control.Monad.IO.Class (liftIO)
-import Data.ByteString.Char8 qualified as BS
 import Data.Text (Text)
-import DPella.Postgres qualified as PG
-import DPella.SQLite qualified as SQL
-import Text.RawString.QQ (r)
+import qualified Data.ByteString.Char8 as BS
+import qualified DPella.Postgres as PG
+import qualified DPella.SQLite as SQL
+
 
 -- Define the data structure for employees
 data Employee = Employee
@@ -33,7 +34,7 @@ runSQLiteExample = SQL.runSQLite ":memory:" $ do
   liftIO $ putStrLn "--- Running SQLite Example ---"
 
   -- Create table
-  _ <- SQL.execute_ [r|
+  _ <- SQL.execute_ [SQL.sql|
     CREATE TABLE IF NOT EXISTS employees (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -60,12 +61,12 @@ runPostgresExample = do
     -- NOTE: Replace with your actual connection string or use environment variables
     let connStr = "host=localhost port=5432 dbname=test user=test password=test"
     putStrLn "\n--- Running PostgreSQL Example ---"
-    putStrLn $ "Connecting to: " <> BS.unpack connStr
+    putStrLn $ "Connecting to: " <> connStr
     PG.runPostgres (BS.pack connStr) $ do
 
       -- Drop and Create table
       _ <- PG.execute_ "DROP TABLE IF EXISTS employees;"
-      _ <- PG.execute_ [r|
+      _ <- PG.execute_ [PG.sql|
         CREATE TABLE employees (
           id SERIAL PRIMARY KEY,
           name TEXT NOT NULL,
