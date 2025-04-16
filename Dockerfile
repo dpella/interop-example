@@ -77,16 +77,17 @@ WORKDIR /app
 RUN cabal update
 
 COPY cabal.project .
-# COPY dpella-sqlite ./dpella-sqlite
-# COPY dpella-postgres ./dpella-postgres
+COPY dpella-base ./dpella-base
+COPY dpella-sqlite ./dpella-sqlite
+COPY dpella-postgres ./dpella-postgres
 
 
-# USER root
-# RUN chown -R $USER_NAME:$USER_NAME /app
+USER root
+RUN chown -R $USER_NAME:$USER_NAME /app
 
-# USER $USER_NAME
+USER $USER_NAME
 
-# RUN cabal build all --only-dependencies
+RUN cabal build all --only-dependencies
 
 USER root
 COPY dpella-ffi ./dpella-ffi
