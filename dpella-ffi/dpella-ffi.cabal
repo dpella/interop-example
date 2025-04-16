@@ -48,17 +48,10 @@ extra-doc-files:    CHANGELOG.md
 -- extra-source-files:
 
 
-flag compile-ffi-lib
-  default: False
-  description:
-   Compile the FFI library
-
-
 foreign-library dpella-ffi
   type: native-shared
   hs-source-dirs: src
-  build-depends:    base >= 4.18 && < 5, 
-                    random
+  build-depends:    base >= 4.18 && < 5, dpella-base
   other-modules: DPella_FFI
   default-language: Haskell2010
   lib-version-info: 1:0:0
@@ -75,8 +68,7 @@ library
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base >= 4.18 && < 5,
-                      random
+    build-depends:    base >= 4.18 && < 5, dpella-base
 
     -- Directories containing source files.
     hs-source-dirs:   src

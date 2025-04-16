@@ -1,0 +1,38 @@
+cabal-version:      2.2
+name:               dpella-sqlite
+version:            0.1.0.0
+license:            LicenseRef-AllRightsReserved
+author:             Matthias Pall Gissurarson
+maintainer:         matti@dpella.io,
+                    lobo@dpella.io
+category:           Database
+
+library
+  default-language:
+    Haskell2010
+  default-extensions:
+        AllowAmbiguousTypes
+      , DataKinds
+      , GADTs
+      , GeneralizedNewtypeDeriving
+      , ImportQualifiedPost
+      , LambdaCase
+      , MultiParamTypeClasses
+      , OverloadedStrings
+      , RankNTypes
+      , TypeApplications
+      , ScopedTypeVariables
+  hs-source-dirs:
+    src
+  exposed-modules:
+    DPella.SQLite
+  build-depends:
+      base >=4.18 && <4.19
+    , dpella-base
+    , sqlite-simple
+    , extra
+    , mtl
+    , text
+    , exceptions
+    , containers
+

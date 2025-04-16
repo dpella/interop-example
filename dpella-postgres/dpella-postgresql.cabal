@@ -1,0 +1,49 @@
+cabal-version:      2.2
+name:               dpella-postgres
+version:            0.1.0.0
+license:            LicenseRef-AllRightsReserved
+author:             Matthias Pall Gissurarson
+maintainer:         matti@dpella.io,
+                    lobo@dpella.io
+category:           Database
+
+flag generate_tags
+  default: False
+  description:
+    Generate tags for the modules
+
+library
+  default-language:
+    Haskell2010
+  default-extensions:
+        AllowAmbiguousTypes
+      , DataKinds
+      , GADTs
+      , GeneralizedNewtypeDeriving
+      , ImportQualifiedPost
+      , LambdaCase
+      , MultiParamTypeClasses
+      , OverloadedStrings
+      , RankNTypes
+      , TypeApplications
+      , ScopedTypeVariables
+  hs-source-dirs:
+    src
+  exposed-modules:
+    DPella.Postgres
+  if flag(generate_tags)
+    ghc-options:
+      -fplugin DPella.Plugins.GenerateTagsPlugin
+    build-depends:
+       dpella-plugins
+  build-depends:
+      base >=4.18 && <4.19
+    , dpella-base
+    , postgresql-simple
+    , time
+    , bytestring
+    , extra
+    , mtl
+    , text
+    , exceptions
+    , containers
