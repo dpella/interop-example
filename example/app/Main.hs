@@ -9,6 +9,7 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text)
 import qualified Data.ByteString.Char8 as BS
 import qualified DPella.Postgres as PG
+import qualified DPella.MySQL as MS
 import qualified DPella.SQLite as SQL
 import Data.String (IsString)
 
@@ -31,7 +32,7 @@ employees =
 
 
 sumQuery :: IsString a => a
-sumQuery = "SELECT SUM(CAST(age as FLOAT)) + dpella_sample_random(18.0,67.0) FROM employees"
+sumQuery = "SELECT SUM(CAST(age as FLOAT)) + dpella_sample_random(CAST(18 AS FLOAT),CAST(67 AS FLOAT)) FROM employees"
 
 insertQuery :: IsString a => a
 insertQuery = "INSERT INTO employees (name, age, is_employed) VALUES (?, ?, ?)"
@@ -66,7 +67,7 @@ runSQLiteExample = SQL.runSQLite ":memory:" $ do
 -- PostgreSQL Example
 runPostgresExample :: IO ()
 runPostgresExample = do
-    let connStr = "host=localhost port=5432 dbname=test user=test password=test"
+    let connStr = "postgres://test:test@localhost:5432/test"
     putStrLn "\n--- Running PostgreSQL Example ---"
     putStrLn $ "Connecting to: " <> connStr
     PG.runPostgres (BS.pack connStr) $ do
@@ -87,7 +88,32 @@ runPostgresExample = do
         [PG.Only totalAge] :: [PG.Only Double] <- PG.query_ sumQuery
         liftIO $ putStrLn $ "Sum of ages (PostgreSQL): " <> show totalAge
 
+-- PostgreSQL Example
+runMySQLxample :: IO ()
+runMySQLxample = do
+    let connStr = "mysql://test:test@localhost:3306/test"
+    putStrLn "\n--- Running MySQL Example ---"
+    putStrLn $ "Connecting to: " <> connStr
+    MS.runMySQL (BS.pack connStr) $ do
+
+      -- Drop and Create table
+      _ <- MS.execute_ "DROP TABLE IF EXISTS employees;"
+      _ <- MS.execute_ createTableQuery
+      liftIO $ putStrLn "MySQL table 'employees' created."
+
+      -- Insert data
+      forM_ employees $ \emp -> do
+        MS.execute insertQuery
+          (empName emp, empAge emp, empIsEmployed emp)
+      liftIO $ putStrLn $ "Inserted " <> show (length employees) <> " records into MySQL."
+
+       -- Query sum of ages 4 times, to show randomness
+      forM_ [1 :: Int ..4] $ \_ -> do
+        [MS.Only totalAge] :: [MS.Only Double] <- MS.query_ sumQuery
+        liftIO $ putStrLn $ "Sum of ages (MySQL): " <> show totalAge
+
 main :: IO ()
 main = do
   runSQLiteExample
   runPostgresExample
+  runMySQLxample

@@ -1,11 +1,12 @@
 cabal-version:      2.2
-name:               dpella-postgres
+name:               dpella-mysql
 version:            0.1.0.0
 license:            LicenseRef-AllRightsReserved
 author:             Matthias Pall Gissurarson
 maintainer:         matti@dpella.io,
                     lobo@dpella.io
 category:           Database
+
 
 library
   default-language:
@@ -25,11 +26,11 @@ library
   hs-source-dirs:
     src
   exposed-modules:
-    DPella.Postgres
+    DPella.MySQL
   build-depends:
       base >=4.18 && <4.19
     , dpella-base
-    , postgresql-simple
+    , mysql-simple
     , time
     , bytestring
     , extra

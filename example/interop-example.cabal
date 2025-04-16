@@ -27,6 +27,7 @@ executable interop-example
         dpella-base,
         dpella-postgres,
         dpella-sqlite,
+        dpella-mysql,
         exceptions,
         extra,
         mtl,

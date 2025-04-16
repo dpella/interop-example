@@ -66,4 +66,15 @@ before we can use any Haskell functions.
 This is done in the `init` function of the PostgreSQL extension, which is called when the extension is loaded,
 and deinitialization happens in the `fini` function, which is called when the extension is unloaded.
 
+### MySQL
+In MySQL, the database also lives in a different process than the Haskell process.
+However, MySQL does not have extensions like PostgreSQL, so we need to use a different approach.
+We need to create a library of functions that can be loaded by MySQL, and then use the `CREATE FUNCTION` statement to register the functions in MySQL.
+
+This means that we need to do initialization and deinitialization for each function call.
+But since we want to maintain state between function calls, we need to use a different approach.
+In this plugin, we simply initialize the Haskell runtime when the function is called *if it has not been initialized yet*,
+and then we never deinitialize it.
+
+This is OK in practice, since the Haskell runtime is designed to be initialized once and then used for the lifetime of the process.
 

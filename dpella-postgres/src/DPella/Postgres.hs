@@ -21,6 +21,7 @@ module DPella.Postgres (
   execute_,
   withTransaction,
   handlePostgresError,
+  parseConnectionString,
   Postgres.SqlError (..),
   Postgres.Query,
   Postgres.Only (..),
@@ -37,6 +38,7 @@ module DPella.Postgres (
   Postgres.sql,
   Postgres.toJSONField,
   Postgres.Null (..),
+  Postgres.ConnectInfo(..),
 ) where
 
 import Control.Monad (when)
@@ -51,6 +53,7 @@ import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Time (UTCTime)
+import Data.Word (Word16)
 import Database.PostgreSQL.Simple qualified as Postgres
 import Database.PostgreSQL.Simple.FromField qualified as Postgres
 import Database.PostgreSQL.Simple.FromRow qualified as Postgres
@@ -95,7 +98,7 @@ getConnection = PostgresT ask
 withCustomPostgres :: (MonadIO m) => BS.ByteString -> (Postgres.Connection -> m a) -> m a
 withCustomPostgres db ma = do
   -- Open the connection
-  conn <- liftIO $ Postgres.connectPostgreSQL db
+  conn <- liftIO $ Postgres.connect (parseConnectionString (BS.unpack db))
   -- Run the computation in the extended function environment
   a <- ma conn
   -- Close the connection
@@ -185,3 +188,36 @@ instance Postgres.ToField RawVal where
   toField (RawDouble d) = Postgres.toField d
   toField (RawInt i) = Postgres.toField i
   toField (RawText t) = Postgres.toField t
+
+-- | Parse a PostgreSQL connection string in the format:
+-- postgres://user:password@host:port/database
+parseConnectionString :: String -> Postgres.ConnectInfo
+parseConnectionString url = 
+  let
+    -- Skip "postgres://" prefix
+    prefix = "postgres://" :: String
+    withoutPrefix = drop (length prefix) url
+    
+    -- Extract user and rest
+    (userPart, afterUser) = break (== ':') withoutPrefix
+    
+    -- Extract password and rest (skip ':')
+    (passwordPart, afterPassword) = break (== '@') (drop 1 afterUser)
+    
+    -- Extract host and rest (skip '@')
+    (hostPart, afterHost) = break (== ':') (drop 1 afterPassword)
+    
+    -- Extract port and database (skip ':')
+    (portPart, databasePart) = break (== '/') (drop 1 afterHost)
+    
+    -- Skip '/' in database
+    database = drop 1 databasePart
+
+  in
+    Postgres.defaultConnectInfo
+      { Postgres.connectHost = hostPart
+      , Postgres.connectPort = read portPart
+      , Postgres.connectUser = userPart
+      , Postgres.connectPassword = passwordPart
+      , Postgres.connectDatabase = database
+      }

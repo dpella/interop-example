@@ -26,6 +26,16 @@ RUN apt-get update && \
       postgresql-contrib \
       postgresql-server-dev-all \
       libpq-dev \
+      mariadb-server \
+      mariadb-client \
+      libmariadb-dev \
+      libmariadb-dev-compat \
+      libmariadbd-dev \
+      cmake \
+      pkg-config \
+      libssl-dev \
+      libzstd-dev \
+      libpcre3-dev \
       && \
     apt-get autoremove -y && \
     apt-get clean -y && \
@@ -80,6 +90,8 @@ COPY cabal.project .
 COPY dpella-base ./dpella-base
 COPY dpella-sqlite ./dpella-sqlite
 COPY dpella-postgres ./dpella-postgres
+COPY dpella-ffi ./dpella-ffi
+COPY dpella-mysql ./dpella-mysql
 
 USER root
 RUN chown -R $USER_NAME:$USER_NAME /app
@@ -89,7 +101,6 @@ USER $USER_NAME
 RUN cabal build all --only-dependencies
 
 USER root
-COPY dpella-ffi ./dpella-ffi
 COPY example ./example
 RUN chown -R $USER_NAME:$USER_NAME /app
 
@@ -119,25 +130,30 @@ RUN ldconfig
 # BUILD the postgres extension and mysql plugin
 USER $USER_NAME
 RUN cd /app/dpella-ffi/pg_extension && make && sudo make install
+RUN cd /app/dpella-ffi/mysql_plugin && make && sudo make install
 
-# Add PostgreSQL initialization script
+## Add PostgreSQL initialization script
 COPY scripts ./scripts
 
 USER root
 RUN mkdir -p /docker-entrypoint-initdb.d
 COPY --chown=postgres:postgres ./scripts/init-postgresql.sh /docker-entrypoint-initdb.d/
 RUN chmod +x /docker-entrypoint-initdb.d/init-postgresql.sh
+COPY --chown=mysql:mysql ./scripts/init-mysql.sh /docker-entrypoint-initdb.d/
+RUN chmod +x /docker-entrypoint-initdb.d/init-mysql.sh
 
 RUN cat <<EOF > /usr/local/bin/entrypoint
 #!/bin/bash
 sudo service postgresql start
 /docker-entrypoint-initdb.d/init-postgresql.sh
+sudo service mariadb start
+/docker-entrypoint-initdb.d/init-mysql.sh
 cabal run example 
 EOF
 RUN chmod +x /usr/local/bin/entrypoint
 
 
-# # Default command
+# Default command
 USER $USER_NAME
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 CMD ["/bin/bash"]
