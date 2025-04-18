@@ -19,7 +19,7 @@ databases such as PostgreSQL and MySQL.
 
 The next figure shows the general idea of the project. 
 
-[![General architecture idea](./fig/arch1.gif)]
+![General architecture idea](./fig/arch1.gif)
 
 The RDBMS will send data -- often the result of certain data analyses -- when
 running SQL queries to DPella's implementation. DPella will *inject noise to
