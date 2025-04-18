@@ -41,7 +41,7 @@ purity) within their existing database workflows.
 We will zoom in into the architecture shown above with a concrete example that
 we will use in the rest of the report. 
 
-~![Two different runtimes](./fig/arch2.gif) 
+![Two different runtimes](./fig/arch2.gif) 
 
 The example focuses on SQL queries being able to call the Haskell function
 `dpellaSampleRandom` (implemented in `dpella-base/src/DPella/Noise.hs`) which
