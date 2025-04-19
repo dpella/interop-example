@@ -24,7 +24,7 @@ The next figure shows the general idea of the project.
 The RDBMS will send data -- often the result of certain data analyses -- when
 running SQL queries to DPella's implementation. DPella will *inject noise to
 those results to protect the privacy of the individuals contributing with their
-data to the dataset being analysed -- DPella applies Differential Privacy
+data to the dataset being analyzed -- DPella applies Differential Privacy
 technology for this. The resulting noisy results and then send back to the
 engine for further processing if needed. 
 
@@ -44,13 +44,13 @@ we will use in the rest of the report.
 ![Two different runtimes](./fig/arch2.gif) 
 
 The example focuses on SQL queries being able to call the Haskell function
-`dpellaSampleRandom` (implemented in [Noise.hs](./dpella-base/src/DPella/Noise.hs) which
+`dpellaSampleRandom` (implemented in [Noise.hs](./dpella-base/src/DPella/Noise.hs)) which
 generates a random number within a given range, potentially as part of a
 Differential Privacy mechanism. This function requires managing state (the
 random number generator) across calls. 
 
 To call that function, queries use the SQL function `dpella_sample_random`. The
-challenge here is three fold: (i) to make the RDBMS to connect the SQL function
+challenge here is three-fold: (i) to make the RDBMS to connect the SQL function
 `dpella_sample_random` with the code in `dpellaSampleRandom`; (ii) passing all
 the SQL arguments as `dpellaSampleRandom`'s arguments; and (iii) passing the
 result of `dpellaSampleRandom` as the SQL result of `dpella_sample_random`.
@@ -69,7 +69,7 @@ employee, her/his age, and a boolean flag to indicate if she/he is still
 employed (see code in [Main.hs](./example/app/Main.hs)). 
 
 The example creates the table of employees, inserts some hard coded records, 
-and executes the following query four time -- so that randomness can be seen. 
+and executes the following query four times -- so that randomness can be seen. 
 
 ```SQL 
 SELECT SUM(CAST(age as FLOAT)) + dpella_sample_random(CAST(18 AS FLOAT),CAST(67 AS FLOAT)) 
@@ -119,7 +119,7 @@ Sum of ages (MySQL): 176.15142166159143
 ```
 
 In what follows the report outline the distinct integration architecture
-required for each engine, analyzes common components across the Haskell modules
+required for each engine, analyses common components across the Haskell modules
 for interoperability. Files
 [SQLite.hs](./dpella-sqlite/src/DPella/SQLite.hs),
 [Postgres.hs](./dpella-postgres/src/DPella/Postgres.hs), and
