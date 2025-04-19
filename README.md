@@ -44,7 +44,7 @@ we will use in the rest of the report.
 ![Two different runtimes](./fig/arch2.gif) 
 
 The example focuses on SQL queries being able to call the Haskell function
-`dpellaSampleRandom` (implemented in `dpella-base/src/DPella/Noise.hs`) which
+`dpellaSampleRandom` (implemented in [Noise.hs](./dpella-base/src/DPella/Noise.hs) which
 generates a random number within a given range, potentially as part of a
 Differential Privacy mechanism. This function requires managing state (the
 random number generator) across calls. 
@@ -63,13 +63,32 @@ Set up the environment (builds Docker image with dependencies and extensions):
 docker build -t sql-interoperability-example .
 ```
 
-Run the example (executes `app/Main.hs` within the Docker container):
 
-```bash
-docker run  sqlinteroperability-example
+We consider a table of employees, where each row contains the name of the
+employee, her/his age, and a boolean flag to indicate if she/he is still
+employed (see code in [Main.hs](./example/app/Main.hs)). 
+
+The example creates the table of employees, inserts some hard coded records, 
+and executes the following query four time -- so that randomness can be seen. 
+
+```SQL 
+SELECT SUM(CAST(age as FLOAT)) + dpella_sample_random(CAST(18 AS FLOAT),CAST(67 AS FLOAT)) 
+FROM employees
 ```
 
-Output:
+This query obtains the sum of all the ages and then adds a random number
+between `18` and `67`. The reason to include `AS FLOAT` in the constants above
+is connected to data marshalling across the RDBMS and Haskell (explained
+later).
+
+Run the example (executes [Main.hs](./example/app/Main.hs) within the Docker container):
+
+```bash
+docker run  sql-interoperability-example
+```
+
+The following output shows how we run such SQL operations in three different SQL
+engines, i.e., SQLite, Postgres, and MySQL. 
 
 ```plaintext
 --- Running SQLite Example ---
@@ -99,15 +118,15 @@ Sum of ages (MySQL): 152.52728376912134
 Sum of ages (MySQL): 176.15142166159143
 ```
 
-
-
-
-This report outlines the distinct integration architecture required for each
-engine, analyzes common components across the Haskell wrapper modules
-(`dpella-sqlite/src/DPella/SQLite.hs`,
-`dpella-postgres/src/DPella/Postgres.hs`, `dpella-mysql/src/DPella/MySQL.hs`),
-provides examples of usage from `example/app/Main.hs`, and presents a
-comparative analysis of the approaches.
+In what follows the report outline the distinct integration architecture
+required for each engine, analyzes common components across the Haskell modules
+for interoperability. Files
+[SQLite.hs](./dpella-sqlite/src/DPella/SQLite.hs),
+[Postgres.hs](./dpella-postgres/src/DPella/Postgres.hs), and
+[MySQL.hs](./dpella-mysql/src/DPella/MySQL.hs) provide the required
+infrastructure (e.g., types, monads) to run the SQL instructions described in
+[Main.hs](./example/app/Main.hs), and presents a comparative analysis of the
+approaches.
 
 ## **3. Overview**
 
