@@ -3,10 +3,10 @@ name:               dpella-base
 version:            0.1.0.0
 -- synopsis:
 -- description:
-license:            MIT
+license:            MMPL-2.0
 license-file:       LICENSE
 author:             Matthias Pall Gissurarson
-maintainer:         mpg@mpg.is
+maintainer:         matti@dpella.io 
 -- copyright:
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
