@@ -11,6 +11,7 @@ RUN apt-get update && \
     export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y --no-install-recommends \
       sudo \
+      apt-utils \ 
       git \
       curl \
       ca-certificates \
@@ -22,20 +23,25 @@ RUN apt-get update && \
       libsqlite3-dev \
       zlib1g-dev \
       libtinfo-dev \
+      cmake \
+      pkg-config \
+      libssl-dev \
+      libzstd-dev 
+
+# SQL engines and libraries required to cabal build 
+RUN apt-get update && \
+    export DEBIAN_FRONTEND=noninteractive && \
+    apt-get install -y --no-install-recommends \
       postgresql \
       postgresql-contrib \
       postgresql-server-dev-all \
-      libpq-dev \
       mariadb-server \
       mariadb-client \
       libmariadb-dev \
       libmariadb-dev-compat \
       libmariadbd-dev \
-      cmake \
-      pkg-config \
-      libssl-dev \
-      libzstd-dev \
       libpcre3-dev \
+      libpq-dev \
       && \
     apt-get autoremove -y && \
     apt-get clean -y && \
