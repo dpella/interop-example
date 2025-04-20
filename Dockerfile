@@ -19,7 +19,6 @@ RUN apt-get update && \
       libffi-dev \
       libgmp-dev \
       libncurses-dev \
-      libsqlite3-dev \
       zlib1g-dev \
       libtinfo-dev \
       cmake \
@@ -34,6 +33,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       libpcre3-dev \
       libpq-dev \
+      libsqlite3-dev \
       postgresql \
       postgresql-contrib \
       postgresql-server-dev-all \
