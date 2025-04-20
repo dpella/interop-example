@@ -4,6 +4,10 @@
 #include <DPella_FFI_stub.h>
 #include <stdint.h>        // for consistent integer types (if needed)
 
+// Prototypes 
+void _PG_init(void); 
+void _PG_fini(void); 
+
 // Declare the SQL-callable wrapper function
 PG_MODULE_MAGIC;                 // Required magic to ensure compatibility
 
