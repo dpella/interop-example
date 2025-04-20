@@ -3,7 +3,7 @@ name:               dpella-base
 version:            0.1.0.0
 -- synopsis:
 -- description:
-license:            MMPL-2.0
+license:            MPL-2.0
 license-file:       LICENSE
 author:             Matthias Pall Gissurarson
 maintainer:         matti@dpella.io 
