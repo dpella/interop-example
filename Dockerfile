@@ -28,6 +28,7 @@ RUN apt-get update && \
       libzstd-dev 
 
 # Dependencies for doing cabal build
+# Dependencies to run make inside dpella-ffi
 RUN apt-get update && \
     export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y --no-install-recommends \
