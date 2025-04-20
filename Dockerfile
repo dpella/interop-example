@@ -22,20 +22,25 @@ RUN apt-get update && \
       libsqlite3-dev \
       zlib1g-dev \
       libtinfo-dev \
+      cmake \
+      pkg-config \
+      libssl-dev \
+      libzstd-dev 
+
+# Dependencies for doing cabal build
+RUN apt-get update && \
+    export DEBIAN_FRONTEND=noninteractive && \
+    apt-get install -y --no-install-recommends \
+      libpcre3-dev \
+      libpq-dev \
       postgresql \
       postgresql-contrib \
       postgresql-server-dev-all \
-      libpq-dev \
       mariadb-server \
       mariadb-client \
       libmariadb-dev \
       libmariadb-dev-compat \
       libmariadbd-dev \
-      cmake \
-      pkg-config \
-      libssl-dev \
-      libzstd-dev \
-      libpcre3-dev \
       && \
     apt-get autoremove -y && \
     apt-get clean -y && \
