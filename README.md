@@ -1,14 +1,61 @@
 # **Report: Integrating Custom Haskell Functions with SQL Engines (SQLite, PostgreSQL, MySQL)**
 
-## **1. Introduction**
+## Introduction 
 
-This report details and compares methods for integrating custom functions written in the Haskell programming language with three popular SQL database engines: SQLite, PostgreSQL, and MySQL. The primary goal is to enable the execution of Haskell logic, such as complex algorithms or specialized computations like adding differential privacy noise, directly within SQL queries. By doing so, developers can leverage Haskell's strengths (e.g., type safety, functional purity) within their existing database workflows.
+At DPella, we leverage advanced programming language techniques in Haskell,
+particularly its powerful type system, to develop robust and 
+*correct by construction* applications. However, while Haskell excels in
+enforcing complex invariants with type safety, it is not ideally suited for
+processing large volumes of data. In contrast, relational databases are
+designed for efficient data management and processing. In this repository, we
+explore how we can offload data processing tasks to relational databases while
+utilizing Haskell's capabilities for injecting noise into the data. 
 
-The example focuses on integrating a Haskell function `dpella_sample_random` (implemented in `dpella-base/src/DPella/Noise.hs`) which generates a random number within a given range, potentially as part of a differential privacy mechanism. This function requires managing state (the random number generator) across calls.
+The primary goal of this repository is to establish effective communication
+between the Haskell runtime and the database engine runtime, enabling the
+execution of Haskell logic directly within SQL queries. We focus on integrating
+custom functions with both embedded databases like SQLite and external
+databases such as PostgreSQL and MySQL.
 
-This report outlines the distinct integration architecture required for each engine, analyzes common components across the Haskell wrapper modules (`dpella-sqlite/src/DPella/SQLite.hs`, `dpella-postgres/src/DPella/Postgres.hs`, `dpella-mysql/src/DPella/MySQL.hs`), provides examples of usage from `example/app/Main.hs`, and presents a comparative analysis of the approaches.
+The next figure shows the general idea of the project. 
 
-## **2. Running the example**
+![General architecture idea](./fig/arch1.gif)
+
+The RDBMS will send data -- often the result of certain data analyses -- when
+running SQL queries to DPella's implementation. DPella will *inject noise to
+those results to protect the privacy of the individuals contributing with their
+data to the dataset being analyzed -- DPella applies Differential Privacy
+technology for this. The resulting noisy results and then send back to the
+engine for further processing if needed. 
+
+Generally speaking, this report details and compares methods for RDBMS being
+able to call functions written in the Haskell. We evaluate three popular SQL
+database engines: SQLite, PostgreSQL, and MySQL. The primary goal is to enable
+the execution of Haskell logic by SQL queries, such as complex algorithms or
+specialized computations like adding Differential Privacy noise. By doing so,
+developers can leverage Haskell's strengths (e.g., type safety, functional
+purity) within their existing database workflows.
+
+## Motivating example
+
+We will zoom in into the architecture shown above with a concrete example that
+we will use in the rest of the report. 
+
+![Two different runtimes](./fig/arch2.gif) 
+
+The example focuses on SQL queries being able to call the Haskell function
+`dpellaSampleRandom` (implemented in [Noise.hs](./dpella-base/src/DPella/Noise.hs)) which
+generates a random number within a given range, potentially as part of a
+Differential Privacy mechanism. This function requires managing state (the
+random number generator) across calls. 
+
+To call that function, queries use the SQL function `dpella_sample_random`. The
+challenge here is three-fold: (i) to make the RDBMS to connect the SQL function
+`dpella_sample_random` with the code in `dpellaSampleRandom`; (ii) passing all
+the SQL arguments as `dpellaSampleRandom`'s arguments; and (iii) passing the
+result of `dpellaSampleRandom` as the SQL result of `dpella_sample_random`.
+
+## Running example
 
 Set up the environment (builds Docker image with dependencies and extensions):
 
@@ -16,13 +63,33 @@ Set up the environment (builds Docker image with dependencies and extensions):
 docker build -t sql-interoperability-example .
 ```
 
-Run the example (executes `app/Main.hs` within the Docker container):
 
-```bash
-docker run  sqlinteroperability-example
+We consider a table of employees, where each row contains the name of the
+employee, her/his age, and a boolean flag to indicate if she/he is still
+employed (see code in [Main.hs](./example/app/Main.hs)). 
+
+The example creates the table of employees, inserts some hard coded records, 
+and executes the following query four times -- so that randomness can be seen. 
+
+```SQL 
+SELECT SUM(CAST(age as FLOAT)) + dpella_sample_random(CAST(18 AS FLOAT),CAST(67 AS FLOAT)) 
+FROM employees
 ```
 
-Output:
+This query obtains the sum of all the ages and then adds a random number
+between `18` and `67`. The reason to include `AS FLOAT` in the constants above
+is connected to data marshalling across the RDBMS and Haskell (explained
+later).
+
+Run the example (executes [Main.hs](./example/app/Main.hs) within the Docker container):
+
+```bash
+docker run  sql-interoperability-example
+```
+
+The following output shows how we run such SQL operations in three different SQL
+engines, i.e., SQLite, Postgres, and MySQL. 
+
 ```plaintext
 --- Running SQLite Example ---
 SQLite table 'employees' created.
@@ -50,6 +117,16 @@ Sum of ages (MySQL): 150.8886262387034
 Sum of ages (MySQL): 152.52728376912134
 Sum of ages (MySQL): 176.15142166159143
 ```
+
+In what follows the report outline the distinct integration architecture
+required for each engine, analyses common components across the Haskell modules
+for interoperability. Files
+[SQLite.hs](./dpella-sqlite/src/DPella/SQLite.hs),
+[Postgres.hs](./dpella-postgres/src/DPella/Postgres.hs), and
+[MySQL.hs](./dpella-mysql/src/DPella/MySQL.hs) provide the required
+infrastructure (e.g., types, monads) to run the SQL instructions described in
+[Main.hs](./example/app/Main.hs), and presents a comparative analysis of the
+approaches.
 
 ## **3. Overview**
 

@@ -1,7 +1,7 @@
 cabal-version:      2.2
 name:               dpella-sqlite
 version:            0.1.0.0
-license:            LicenseRef-AllRightsReserved
+license:            MPL-2.0
 author:             Matthias Pall Gissurarson
 maintainer:         matti@dpella.io,
                     lobo@dpella.io
