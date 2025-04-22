@@ -197,7 +197,7 @@ Haskell package `sqlite-simple` (see function `DPella.SQLite.withSQLFunctions`).
 This allows seamless invocation of Haskell functions from SQL queries via
 `query_`, as seen in `runSQLiteExample` in [Main.hs](./example/app/Main.hs).
 
-    ```haskell
+```haskell
     sumQuery :: IsString a => a
     sumQuery = "SELECT dpella_sample_random(SUM(CAST(age as FLOAT)),CAST(10 AS FLOAT))"
                ++ " FROM employees"
@@ -217,7 +217,7 @@ This allows seamless invocation of Haskell functions from SQL queries via
         SQLite.createFunction conn sqlDPellaSampleRandom (impl env)
         -- Running the query 
         query_ sumQuery
-    ```
+```
 
 ### PostgreSQL 
 
