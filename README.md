@@ -140,13 +140,27 @@ on the following parts:
 
 - Exposing this function to the respective SQL engines using engine-specific mechanisms.
 
-- Providing Haskell interoperability modules [SQLite.hs](./dpella-sqlite/src/DPella/SQLite.hs), [Postgres.hs](./dpella-postgres/src/DPella/Postgres.hs), and [MySQL.hs](./dpella-mysql/src/DPella/MySQL.hs). 
-
-  All three modules provide a monadic interface for interacting with their
-  respective RDBMS. 
+- Providing Haskell interoperability modules
+  [SQLite.hs](./dpella-sqlite/src/DPella/SQLite.hs),
+  [Postgres.hs](./dpella-postgres/src/DPella/Postgres.hs), and
+  [MySQL.hs](./dpella-mysql/src/DPella/MySQL.hs). All three modules provide a
+  monadic interface for interacting with their respective RDBMS. 
 
   Each module includes functions to establish and manage database connections.
-  The modules support executing SQL queries, including `SELECT`, and `INSERT`.
+
+  ```haskell
+  runSQLiteT   :: (MonadIO m) => FilePath -> SQLiteT m a -> m a
+
+  runPostgresT :: (MonadIO m) => BS.ByteString -> PostgresT m a -> m a
+
+  runMySQLT    :: (MonadIO m) => BS.ByteString -> MySQLT m a -> m a
+  ```
+
+  `SQLiteT`, `PostgresT`, and `MySQLT`** are all monad transformers that extend
+  the base monad (often `IO`) to include additional functionality specific to
+  their respective database operations. 
+
+  These modules also support executing SQL queries, including `SELECT`, and `INSERT`.
 
   ```haskell 
   SQLite.query_   :: (SQLite.FromRow res, MonadIO m) => SQLite.Query -> SQLiteT m [res]
@@ -156,21 +170,22 @@ on the following parts:
   MySQL.query_    :: (MySQL.QueryResults res, MonadIO m) => MySQL.Query -> MySQLT m [res]
   ```
 
-<!--   They typically provide a way to open a connection using a connection string -->
-<!--   and ensure that the connection is properly closed after use. -->
-<!---->
-<!-- 3. **Query Execution**: -->
-<!---->
-<!-- 4. **Transaction Support**: -->
-<!--    - Each module includes functionality to handle transactions, allowing multiple operations to be executed as a single unit of work. This includes beginning, committing, and rolling back transactions to maintain data integrity. -->
-<!---->
-<!-- 5. **Error Handling**: -->
-<!--    - The modules implement error handling mechanisms to manage exceptions that may arise during database operations. This ensures that errors can be caught and handled gracefully, improving the robustness of the application. -->
-<!---->
-<!-- 6. **Custom SQL Functions**: -->
-<!--    - They allow for the registration and use of custom SQL functions, enabling users to extend the database's capabilities with application-specific logic. -->
-<!---->
-<!---->
+  as well as SQL instructions that modify the dataset, e.g., `UPDATE`, `INSERT`, and `CREATE`. 
+  However, to run those, there is another function responsible for that. 
+
+  ```haskell
+  SQLite.execute   :: (SQLite.ToRow res, MonadIO m) => SQLite.Query -> res -> SQLiteT m Int
+
+  Postgres.execute :: (Postgres.ToRow res, MonadIO m) => Postgres.Query -> res -> PostgresT m Int
+
+  MySQL.execute    :: (MySQL.QueryParams res, MonadIO m) => MySQL.Query -> res -> MySQLT m Int
+  ```
+
+  Here, the argument `res` is, for instance, the data to be inserted. 
+
+  The modules also have functions to manage transactions and error handling but
+  we do not describe them any further. 
+
   
 
 * **SQLite**: Runs within the same process as the Haskell application (`app/Main.hs`). Custom functions are directly registered using the `sqlite-simple` Haskell API within `DPella.SQLite.withSQLFunctions`. This allows seamless invocation from SQL queries executed via `DPella.SQLite.query_`, as seen in `runSQLiteExample`.
