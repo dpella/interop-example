@@ -1,5 +1,9 @@
 # Makefile for DPella MySQL Plugin
 
+# Set the path to GHC
+USER = "dpella"
+GHC_PATH = /home/${USER}/.ghcup/bin
+
 # Variables to adjust
 MYSQL_CONFIG ?= mysql_config
 PLUGIN_NAME = dpella_ffi_mysql
@@ -8,12 +12,12 @@ PLUGIN_NAME = dpella_ffi_mysql
 MYSQL_INCLUDE_DIR = $(shell $(MYSQL_CONFIG) --include )
 MYSQL_PLUGIN_DIR = $(shell $(MYSQL_CONFIG) --plugindir)
  
-GHCVERSION := $(shell ghc --numeric-version)
+GHCVERSION := $(shell ${GHC_PATH}/ghc --numeric-version)
  
-GHCDIR := $(shell find $(shell ghc --print-libdir) -name HsFFI.h -exec dirname {} \;)
+GHCDIR := $(shell find $(shell ${GHC_PATH}/ghc --print-libdir) -name HsFFI.h -exec dirname {} \;)
 STUBLOC := $(shell realpath $(shell find ../../dist-newstyle/ -wholename '*/build/DPella_FFI_stub.h' -exec dirname {} \;))
 LIBLOC := $(shell realpath  $(shell find ../../dist-newstyle -name '*libdpella-ffi.so.1.0.0' -exec dirname {} \;))
-GHCLIBDIR := $(shell find $(shell ghc --print-libdir) -name 'libHSrts-1.0.2-ghc$(GHCVERSION).so' -exec dirname {} \;)
+GHCLIBDIR := $(shell find $(shell ${GHC_PATH}/ghc --print-libdir) -name 'libHSrts-1.0.2-ghc$(GHCVERSION).so' -exec dirname {} \;)
  
 # Compiler and flags
 CC = gcc

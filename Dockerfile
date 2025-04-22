@@ -24,7 +24,8 @@ RUN apt-get update && \
       cmake \
       pkg-config \
       libssl-dev \
-      libzstd-dev 
+      libzstd-dev \
+      coreutils
 
 # Dependencies for doing cabal build
 # Dependencies to run make inside dpella-ffi
@@ -128,13 +129,13 @@ RUN cp /home/$USER_NAME/.ghcup/ghc/$GHC_VERSION/lib/ghc-$GHC_VERSION/lib/x86_64-
 RUN find /home/$USER_NAME/.local/state/cabal/store/ghc-$GHC_VERSION -name '*.so' -exec cp {}  /usr/local/lib/dpella/ \; >> /etc/ld.so.conf.d/dpella.conf
 
 # Update the dynamic linker cache to include the new libraries
-RUN cat <<EOF > /etc/ld.so.conf.d/dpella.conf
-/usr/local/lib/dpella
-EOF
+RUN echo "usr/local/lib/dpella" >> /etc/ld.so.conf.d/dpella.conf
 RUN ldconfig
 
 # BUILD the postgres extension and mysql plugin
 USER $USER_NAME
+
+# User "dpella" is hardcoded in the Makefiles (it does not build when built inside a docker)
 RUN cd /app/dpella-ffi/pg_extension && make && sudo make install
 RUN cd /app/dpella-ffi/mysql_plugin && make && sudo make install
 
@@ -148,14 +149,12 @@ RUN chmod +x /docker-entrypoint-initdb.d/init-postgresql.sh
 COPY --chown=mysql:mysql ./scripts/init-mysql.sh /docker-entrypoint-initdb.d/
 RUN chmod +x /docker-entrypoint-initdb.d/init-mysql.sh
 
-RUN cat <<EOF > /usr/local/bin/entrypoint
-#!/bin/bash
-sudo service postgresql start
-/docker-entrypoint-initdb.d/init-postgresql.sh
-sudo service mariadb start
-/docker-entrypoint-initdb.d/init-mysql.sh
-cabal run example 
-EOF
+RUN echo "#!/bin/bash" > /usr/local/bin/entrypoint
+RUN echo "sudo service postgresql start" >> /usr/local/bin/entrypoint
+RUN echo "/docker-entrypoint-initdb.d/init-postgresql.sh" >> /usr/local/bin/entrypoint
+RUN echo "sudo service mariadb start" >> /usr/local/bin/entrypoint
+RUN echo "/docker-entrypoint-initdb.d/init-mysql.sh" >> /usr/local/bin/entrypoint
+RUN echo "cabal run example " >> /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint
 
 
