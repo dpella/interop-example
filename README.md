@@ -219,10 +219,67 @@ mechanisms*.
     ```
 
 
+    * **PostgreSQL**: As a stand-alone RDBMS, it runs in a separate process as
+    the Haskell code. Integration is achieved by creating a *PostgreSQL
+    extension* (see folder
+    [dpella-ffi-ext/pg_extension](./dpella-ffi/pg_extension/)) as a shared
+    library written in C
+    ([dpella-ffi-ext.c](./dpella-ffi/pg_extension/dpella-ffi-ext.c)). 
 
-* **PostgreSQL**: Runs as a separate process. Integration is achieved by creating a PostgreSQL extension (`dpella-ffi-ext`) as a shared library written in C (`dpella-ffi/pg_extension/dpella-ffi-ext.c`). This C code calls into the Haskell function (`wrappedDpellaSampleRandom` exposed via FFI in `dpella-ffi/src/DPella_FFI.hs`). The Haskell runtime is explicitly initialized (`hs_init`) and finalized (`hs_exit`) within the PostgreSQL extension lifecycle functions (`_PG_init`, `_PG_fini`). The Haskell application (`app/Main.hs`) connects using a connection string and executes queries via `DPella.Postgres.query_`.
+    Intuitively, Postgress will call into the C function
+    `pg_dpella_sample_random` in the extension when hitting the SQL function
+    `dpella_sample_random`. This information is defined for the Postgres
+    extension is provided into
+    [dpella-ffi-ext--1.0.sql](./dpella-ffi/pg_extension/dpella-ffi-ext--1.0.sql):
+    
+    ```SQL CREATE FUNCTION dpella_sample_random(result FLOAT8, param FLOAT8)
+    RETURNS FLOAT8 AS 'MODULE_PATHNAME', 'pg_dpella_sample_random' LANGUAGE C
+    IMMUTABLE STRICT;   
+    ```
 
-* **MySQL**: Also runs as a separate process. Custom functions are dynamically loaded using MySQL's User Defined Function (UDF) mechanism, defined via `CREATE FUNCTION ... SONAME ...` (`dpella-ffi/mysql_plugin/init.sql`). A C shared library (`dpella-ffi/mysql_plugin/dpella_ffi_mysql.c`) acts as a bridge, calling the FFI-exposed Haskell function. The Haskell runtime is lazily initialized (`hs_init`) upon the first function call using a mutex for thread safety and remains active for the lifetime of the MySQL process. The Haskell application (`app/Main.hs`) connects using a connection string and executes queries via `DPella.MySQL.query_`.
+    This C code then calls into the C function 
+    `dpella_sample_random_hs` which is exported by the Haskell FFI 
+    [DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs): 
+
+    ```haskell
+    foreign export ccall "dpella_sample_random_hs"
+        wrappedDpellaSampleRandom :: CDouble -> CDouble -> IO CDouble
+    ```
+
+    So, when `dpella_sample_random_hs` get invoked, then the Haskell 
+    function `wrappedDpellaSampleRandom` gets called, which subsequently 
+    calls `dpellaSampleRandom`. 
+
+    ```haskell 
+    wrappedDpellaSampleRandom :: CDouble -> CDouble -> IO CDouble
+    wrappedDpellaSampleRandom = wrap2 dpellaSampleRandom
+    ```
+
+    Postgres extensions most be initialized and finished using functions 
+    `_PG_init` and `_PG_fini`. These functions then call the Haskell FFI 
+    provided functions `init_hs` and `hs_exit` to initialize and finished 
+    the Haskell runtime ([dpella-ffi-ext.c](./dpella-ffi/pg_extension/dpella-ffi-ext.c)): 
+
+    ```C 
+    void _PG_init(void) {
+     hs_init(NULL, NULL);
+    }
+
+    void _PG_fini(void) {
+     hs_exit();
+    }
+    ```
+    
+    * **MySQL**: Also runs as a separate process. Custom functions are
+    dynamically loaded using MySQL's User Defined Function (UDF) mechanism,
+    defined via `CREATE FUNCTION ... SONAME ...`
+    (`dpella-ffi/mysql_plugin/init.sql`). A C shared library
+    (`dpella-ffi/mysql_plugin/dpella_ffi_mysql.c`) acts as a bridge, calling the
+    FFI-exposed Haskell function. The Haskell runtime is lazily initialized
+    (`hs_init`) upon the first function call using a mutex for thread safety and
+    remains active for the lifetime of the MySQL process. The Haskell
+    application (`app/Main.hs`) connects using a connection string and executes
+    queries via `DPella.MySQL.query_`.
 
 Each engine-specific integration is encapsulated in dedicated Haskell modules (`DPella.SQLite`, `DPella.Postgres`, `DPella.MySQL`) and corresponding FFI/C code where applicable.
 
