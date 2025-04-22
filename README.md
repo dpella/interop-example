@@ -270,18 +270,49 @@ mechanisms*.
     }
     ```
     
-    * **MySQL**: Also runs as a separate process. Custom functions are
-    dynamically loaded using MySQL's User Defined Function (UDF) mechanism,
-    defined via `CREATE FUNCTION ... SONAME ...`
-    (`dpella-ffi/mysql_plugin/init.sql`). A C shared library
-    (`dpella-ffi/mysql_plugin/dpella_ffi_mysql.c`) acts as a bridge, calling the
-    FFI-exposed Haskell function. The Haskell runtime is lazily initialized
-    (`hs_init`) upon the first function call using a mutex for thread safety and
-    remains active for the lifetime of the MySQL process. The Haskell
-    application (`app/Main.hs`) connects using a connection string and executes
-    queries via `DPella.MySQL.query_`.
+    * **MySQL**: As a stand-alone RDBMS, it runs in a separate process from the
+    Haskell runtime. Custom SQL functions are dynamically loaded using [MySQL's
+    User Defined Function (UDF)
+    mechanism](https://dev.mysql.com/doc/refman/8.4/en/create-function-loadable.html), where 
+    `CREATE FUNCTION` defines *loadable functions* 
+    (see file [init.sql](./dpella-ffi/mysql_plugin/init.sql)): 
 
-Each engine-specific integration is encapsulated in dedicated Haskell modules (`DPella.SQLite`, `DPella.Postgres`, `DPella.MySQL`) and corresponding FFI/C code where applicable.
+    ```SQL 
+    CREATE FUNCTION dpella_sample_random RETURNS REAL SONAME "libdpella_ffi_mysql.so";
+    ```
+
+    When MySQL invokes `dpella_sample_random`, then it calls functions with the
+    same name found in the library `libdpella_ffi_mysql.so`. This library source
+    C code is in
+    [dpella_ffi_mysql.c](./dpella-ffi/mysql_plugin/dpella_ffi_mysql.c): 
+
+    ```C 
+    int dpella_sample_random_init(UDF_INIT *initid, UDF_ARGS *args, char *message) ;
+    void dpella_sample_random_deinit(UDF_INIT *initid) ;
+    double dpella_sample_random(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *error) ;
+    ```
+
+    The C function `dpella_sample_random` acts as bridge, calling the
+    FFI-exposed C function `dpella_sample_random_hs`: 
+
+    ```C 
+    double dpella_sample_random(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *error) {
+        double arg1 = *((double*)args->args[0]);
+        double arg2 = *((double*)args->args[1]);
+
+        double result = dpella_sample_random_hs(arg1, arg2);
+        *((double*)initid->ptr) = result;
+
+        return result;
+    }
+    ```
+
+    The Haskell runtime is initialized
+    upon the first function call -- see code in `dpella_sample_random_init` and
+    the call to `hs_init`. 
+    The C functions mentioned above use a mutex for thread safety and
+    remains active for the lifetime of the MySQL process -- in fact, it never 
+    calls `hs_exit`. 
 
 ## **4. Commonalities Across Engines**
 
