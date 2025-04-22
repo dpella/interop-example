@@ -14,10 +14,13 @@ newNoiseGen =  do
     gen <- newStdGen
     newIORef gen
 
--- | Sample the random number generator
+-- | draw a single sample from a Gaussian distribution with mean mu and standard deviation sigma
 dpellaSampleRandom :: NoiseGen -> Double -> Double -> IO Double
-dpellaSampleRandom ref f t = do
-  gen <- readIORef ref
-  let (value, newGen) = randomR (f, t) gen
-  writeIORef ref newGen
-  return value
+dpellaSampleRandom ref mu sigma = do
+  gen0 <- readIORef ref
+  let (u1, gen1) = randomR (1e-10, 1   ) gen0  -- avoid log 0
+      (u2, gen2) = randomR (0      , 1   ) gen1
+      z0         = sqrt (-2 * log u1) * cos (2 * pi * u2)
+      value      = mu + sigma * z0
+  writeIORef ref gen2
+  pure value
