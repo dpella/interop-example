@@ -130,11 +130,54 @@ approaches.
 
 ## **3. Overview**
 
-This repository demonstrates how to integrate the custom Haskell function `dpella_sample_random` into SQL queries across SQLite, PostgreSQL, and MySQL. The general approach involves:
+This repository demonstrates how to call to Haskell's code when 
+executing the SQL function `dpella_sample_random` across the RDBMS 
+SQLite, PostgreSQL, and MySQL. At the top level, the approach consists 
+on the following parts: 
 
-1.  Defining the core Haskell function (`dpellaSampleRandom` in `DPella.Noise`) and its state (`NoiseGen`).
-2.  Exposing this function to the respective SQL engines using engine-specific mechanisms.
-3.  Providing Haskell wrapper modules (`DPella.SQLite`, `DPella.Postgres`, `DPella.MySQL`) to simplify interaction with each database from Haskell application code.
+- Defining the Haskell function that gives semantics to the SQL function 
+`dpella_sample_random` (`dpellaSampleRandom` in [Noise.hs](./dpella-base/src/DPella/Noise.hs)) and its state (of type `NoiseGen`).
+
+- Exposing this function to the respective SQL engines using engine-specific mechanisms.
+
+- Providing Haskell interoperability modules 
+    - [SQLite.hs](./dpella-sqlite/src/DPella/SQLite.hs),
+    - [Postgres.hs](./dpella-postgres/src/DPella/Postgres.hs), and
+    - [MySQL.hs](./dpella-mysql/src/DPella/MySQL.hs) 
+
+  All three modules provide a monadic interface for interacting with their
+  respective RDBMS. 
+
+  Each module includes functions to establish and manage database connections.
+  The modules support executing SQL queries, including `SELECT`, and `INSERT`.
+
+  ```haskell 
+  SQLite.query_   :: (SQLite.FromRow res, MonadIO m) 
+                  => SQLite.Query -> SQLiteT m [res]
+
+  Postgres.query_ :: (Postgres.FromRow res, MonadIO m) 
+                  => Postgres.Query -> PostgresT m [res]
+
+  MySQL.query_    :: (MySQL.QueryResults res, MonadIO m) 
+                  => MySQL.Query -> MySQLT m [res]
+  ```
+
+<!--   They typically provide a way to open a connection using a connection string -->
+<!--   and ensure that the connection is properly closed after use. -->
+<!---->
+<!-- 3. **Query Execution**: -->
+<!---->
+<!-- 4. **Transaction Support**: -->
+<!--    - Each module includes functionality to handle transactions, allowing multiple operations to be executed as a single unit of work. This includes beginning, committing, and rolling back transactions to maintain data integrity. -->
+<!---->
+<!-- 5. **Error Handling**: -->
+<!--    - The modules implement error handling mechanisms to manage exceptions that may arise during database operations. This ensures that errors can be caught and handled gracefully, improving the robustness of the application. -->
+<!---->
+<!-- 6. **Custom SQL Functions**: -->
+<!--    - They allow for the registration and use of custom SQL functions, enabling users to extend the database's capabilities with application-specific logic. -->
+<!---->
+<!---->
+  
 
 * **SQLite**: Runs within the same process as the Haskell application (`app/Main.hs`). Custom functions are directly registered using the `sqlite-simple` Haskell API within `DPella.SQLite.withSQLFunctions`. This allows seamless invocation from SQL queries executed via `DPella.SQLite.query_`, as seen in `runSQLiteExample`.
 
