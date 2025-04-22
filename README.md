@@ -138,8 +138,6 @@ on the following parts:
 - Defining the Haskell function that gives semantics to the SQL function 
 `dpella_sample_random` (`dpellaSampleRandom` in [Noise.hs](./dpella-base/src/DPella/Noise.hs)) and its state (of type `NoiseGen`).
 
-- Exposing this function to the respective SQL engines using engine-specific mechanisms.
-
 - Providing Haskell interoperability modules
   [SQLite.hs](./dpella-sqlite/src/DPella/SQLite.hs),
   [Postgres.hs](./dpella-postgres/src/DPella/Postgres.hs), and
@@ -186,9 +184,40 @@ on the following parts:
   The modules also have functions to manage transactions and error handling but
   we do not describe them any further. 
 
-  
+- Making the RDBMS aware of the SQL function `dpella_sample_random` and which
+code to execute when being called. This tasks is implemented using *SQL engine-specific
+mechanisms*.
 
-* **SQLite**: Runs within the same process as the Haskell application (`app/Main.hs`). Custom functions are directly registered using the `sqlite-simple` Haskell API within `DPella.SQLite.withSQLFunctions`. This allows seamless invocation from SQL queries executed via `DPella.SQLite.query_`, as seen in `runSQLiteExample`.
+    * **SQLite**: Since it is an embedded RDBMS, it runs within the same process
+    as the Haskell application defined in [Main.hs](./example/app/Main.hs). SQL
+    custom functions -- like `dpella_sample_random` -- are directly registered
+    using the API from the Haskell package `sqlite-simple` (see function
+    `DPella.SQLite.withSQLFunctions`). This allows seamless invocation of
+    Haskell functions from SQL queries via `query_`, as seen in
+    `runSQLiteExample` in [Main.hs](./example/app/Main.hs).
+
+    ```haskell
+    sumQuery :: IsString a => a
+    sumQuery = "SELECT dpella_sample_random(SUM(CAST(age as FLOAT)),CAST(10 AS FLOAT)) FROM employees"
+
+    -- It declares the custom SQL function `dpella_sample_random`, and 
+    -- provides the semantics as the Haskell function `dpellaSampleRandom`
+    sqlDPellaSampleRandom :: SQLFunction
+    sqlDPellaSampleRandom =
+        SQLFunction "dpella_sample_random" $ dpellaSampleRandom . sqlite_env_rng
+    
+    runWithSampling = do 
+        -- Initialized the random seed 
+        env <- liftIO initSQLiteEnv
+        -- Get the connection 
+        conn <- getConnection
+        -- Register the function 
+        SQLite.createFunction conn sqlDPellaSampleRandom (impl env)
+        -- Running the query 
+        query_ sumQuery
+    ```
+
+
 
 * **PostgreSQL**: Runs as a separate process. Integration is achieved by creating a PostgreSQL extension (`dpella-ffi-ext`) as a shared library written in C (`dpella-ffi/pg_extension/dpella-ffi-ext.c`). This C code calls into the Haskell function (`wrappedDpellaSampleRandom` exposed via FFI in `dpella-ffi/src/DPella_FFI.hs`). The Haskell runtime is explicitly initialized (`hs_init`) and finalized (`hs_exit`) within the PostgreSQL extension lifecycle functions (`_PG_init`, `_PG_fini`). The Haskell application (`app/Main.hs`) connects using a connection string and executes queries via `DPella.Postgres.query_`.
 
