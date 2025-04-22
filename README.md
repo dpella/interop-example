@@ -188,7 +188,7 @@ on the following parts:
 code to execute when being called. This tasks is implemented using *SQL engine-specific
 mechanisms*.
 
-    * **SQLite**: Since it is an embedded RDBMS, it runs within the same process
+    * **SQLite**: Since it is an *embedded* RDBMS, it runs within the same process
     as the Haskell application defined in [Main.hs](./example/app/Main.hs). SQL
     custom functions -- like `dpella_sample_random` -- are directly registered
     using the API from the Haskell package `sqlite-simple` (see function
