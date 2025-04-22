@@ -152,14 +152,11 @@ on the following parts:
   The modules support executing SQL queries, including `SELECT`, and `INSERT`.
 
   ```haskell 
-  SQLite.query_   :: (SQLite.FromRow res, MonadIO m) 
-                  => SQLite.Query -> SQLiteT m [res]
+  SQLite.query_   :: (SQLite.FromRow res, MonadIO m) => SQLite.Query -> SQLiteT m [res]
 
-  Postgres.query_ :: (Postgres.FromRow res, MonadIO m) 
-                  => Postgres.Query -> PostgresT m [res]
+  Postgres.query_ :: (Postgres.FromRow res, MonadIO m) => Postgres.Query -> PostgresT m [res]
 
-  MySQL.query_    :: (MySQL.QueryResults res, MonadIO m) 
-                  => MySQL.Query -> MySQLT m [res]
+  MySQL.query_    :: (MySQL.QueryResults res, MonadIO m) => MySQL.Query -> MySQLT m [res]
   ```
 
 <!--   They typically provide a way to open a connection using a connection string -->
