@@ -255,7 +255,7 @@ mechanisms*.
     wrappedDpellaSampleRandom = wrap2 dpellaSampleRandom
     ```
 
-    Postgres extensions most be initialized and finished using functions 
+    Postgres extensions most be initialized and finished using C functions 
     `_PG_init` and `_PG_fini`. These functions then call the Haskell FFI 
     provided functions `init_hs` and `hs_exit` to initialize and finished 
     the Haskell runtime ([dpella-ffi-ext.c](./dpella-ffi/pg_extension/dpella-ffi-ext.c)): 
