@@ -232,34 +232,34 @@ Intuitively, Postgress will call into the C function
 is provided into
 [dpella-ffi-ext--1.0.sql](./dpella-ffi/pg_extension/dpella-ffi-ext--1.0.sql):
     
-    ```SQL CREATE FUNCTION dpella_sample_random(result FLOAT8, param FLOAT8)
+```SQL CREATE FUNCTION dpella_sample_random(result FLOAT8, param FLOAT8)
     RETURNS FLOAT8 AS 'MODULE_PATHNAME', 'pg_dpella_sample_random' LANGUAGE C
     IMMUTABLE STRICT;   
-    ```
+```
 
 This C code then calls into the C function `dpella_sample_random_hs` which is
 exported by the Haskell FFI [DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs): 
 
-    ```haskell
+```haskell
     foreign export ccall "dpella_sample_random_hs"
-        wrappedDpellaSampleRandom :: CDouble -> CDouble -> IO CDouble
-    ```
+wrappedDpellaSampleRandom :: CDouble -> CDouble -> IO CDouble
+```
 
 So, when `dpella_sample_random_hs` get invoked, then the Haskell function
 `wrappedDpellaSampleRandom` gets called, which subsequently calls
 `dpellaSampleRandom`. 
 
-    ```haskell 
+```haskell 
     wrappedDpellaSampleRandom :: CDouble -> CDouble -> IO CDouble
     wrappedDpellaSampleRandom = wrap2 dpellaSampleRandom
-    ```
+```
 
 Postgres extensions most be initialized and finished using C functions
 `_PG_init` and `_PG_fini`. These functions then call the Haskell FFI provided
 functions `init_hs` and `hs_exit` to initialize and finished the Haskell runtime
 ([dpella-ffi-ext.c](./dpella-ffi/pg_extension/dpella-ffi-ext.c)): 
 
-    ```C 
+```C 
     void _PG_init(void) {
      hs_init(NULL, NULL);
     }
@@ -267,7 +267,7 @@ functions `init_hs` and `hs_exit` to initialize and finished the Haskell runtime
     void _PG_fini(void) {
      hs_exit();
     }
-    ```
+```
 
 ### MySQL 
 
@@ -278,24 +278,24 @@ mechanism](https://dev.mysql.com/doc/refman/8.4/en/create-function-loadable.html
 where `CREATE FUNCTION` defines *loadable functions* (see file
 [init.sql](./dpella-ffi/mysql_plugin/init.sql)): 
 
-    ```SQL 
+```SQL 
     CREATE FUNCTION dpella_sample_random RETURNS REAL SONAME "libdpella_ffi_mysql.so";
-    ```
+```
 
 When MySQL invokes `dpella_sample_random`, then it calls functions with the same
 name found in the library `libdpella_ffi_mysql.so`. This library source C code
 is in [dpella_ffi_mysql.c](./dpella-ffi/mysql_plugin/dpella_ffi_mysql.c): 
 
-    ```C 
+```C 
     int dpella_sample_random_init(UDF_INIT *initid, UDF_ARGS *args, char *message) ;
     void dpella_sample_random_deinit(UDF_INIT *initid) ;
     double dpella_sample_random(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *error) ;
-    ```
+```
 
 The C function `dpella_sample_random` acts as bridge, calling the
 FFI-exposed C function `dpella_sample_random_hs`: 
 
-    ```C 
+```C 
     double dpella_sample_random(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *error) {
         double arg1 = *((double*)args->args[0]);
         double arg2 = *((double*)args->args[1]);
@@ -305,7 +305,7 @@ FFI-exposed C function `dpella_sample_random_hs`:
 
         return result;
     }
-    ```
+```
 
 The Haskell runtime is initialized upon the first function call -- see code in
 `dpella_sample_random_init` and the call to `hs_init`. The C functions mentioned
