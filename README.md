@@ -198,7 +198,8 @@ mechanisms*.
 
     ```haskell
     sumQuery :: IsString a => a
-    sumQuery = "SELECT dpella_sample_random(SUM(CAST(age as FLOAT)),CAST(10 AS FLOAT)) FROM employees"
+    sumQuery = "SELECT dpella_sample_random(SUM(CAST(age as FLOAT)),CAST(10 AS FLOAT))"
+               ++ " FROM employees"
 
     -- It declares the custom SQL function `dpella_sample_random`, and 
     -- provides the semantics as the Haskell function `dpellaSampleRandom`
