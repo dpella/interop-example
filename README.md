@@ -140,10 +140,7 @@ on the following parts:
 
 - Exposing this function to the respective SQL engines using engine-specific mechanisms.
 
-- Providing Haskell interoperability modules 
-    - [SQLite.hs](./dpella-sqlite/src/DPella/SQLite.hs),
-    - [Postgres.hs](./dpella-postgres/src/DPella/Postgres.hs), and
-    - [MySQL.hs](./dpella-mysql/src/DPella/MySQL.hs) 
+- Providing Haskell interoperability modules [SQLite.hs](./dpella-sqlite/src/DPella/SQLite.hs), [Postgres.hs](./dpella-postgres/src/DPella/Postgres.hs), and [MySQL.hs](./dpella-mysql/src/DPella/MySQL.hs). 
 
   All three modules provide a monadic interface for interacting with their
   respective RDBMS. 
