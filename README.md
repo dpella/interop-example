@@ -188,13 +188,14 @@ on the following parts:
 code to execute when being called. This tasks is implemented using *SQL engine-specific
 mechanisms*.
 
-    * **SQLite**: Since it is an *embedded* RDBMS, it runs within the same process
-    as the Haskell application defined in [Main.hs](./example/app/Main.hs). SQL
-    custom functions -- like `dpella_sample_random` -- are directly registered
-    using the API from the Haskell package `sqlite-simple` (see function
-    `DPella.SQLite.withSQLFunctions`). This allows seamless invocation of
-    Haskell functions from SQL queries via `query_`, as seen in
-    `runSQLiteExample` in [Main.hs](./example/app/Main.hs).
+### SQLite
+
+Since it is an *embedded* RDBMS, it runs within the same process as the Haskell
+application defined in [Main.hs](./example/app/Main.hs). SQL custom functions --
+like `dpella_sample_random` -- are directly registered using the API from the
+Haskell package `sqlite-simple` (see function `DPella.SQLite.withSQLFunctions`).
+This allows seamless invocation of Haskell functions from SQL queries via
+`query_`, as seen in `runSQLiteExample` in [Main.hs](./example/app/Main.hs).
 
     ```haskell
     sumQuery :: IsString a => a
@@ -218,47 +219,45 @@ mechanisms*.
         query_ sumQuery
     ```
 
+### PostgreSQL 
 
-    * **PostgreSQL**: As a stand-alone RDBMS, it runs in a separate process as
-    the Haskell code. Integration is achieved by creating a *PostgreSQL
-    extension* (see folder
-    [dpella-ffi-ext/pg_extension](./dpella-ffi/pg_extension/)) as a shared
-    library written in C
-    ([dpella-ffi-ext.c](./dpella-ffi/pg_extension/dpella-ffi-ext.c)). 
+As a stand-alone RDBMS, it runs in a separate process as the Haskell code.
+Integration is achieved by creating a *PostgreSQL extension* (see folder
+[dpella-ffi-ext/pg_extension](./dpella-ffi/pg_extension/)) as a shared library
+written in C ([dpella-ffi-ext.c](./dpella-ffi/pg_extension/dpella-ffi-ext.c)). 
 
-    Intuitively, Postgress will call into the C function
-    `pg_dpella_sample_random` in the extension when hitting the SQL function
-    `dpella_sample_random`. This information is defined for the Postgres
-    extension is provided into
-    [dpella-ffi-ext--1.0.sql](./dpella-ffi/pg_extension/dpella-ffi-ext--1.0.sql):
+Intuitively, Postgress will call into the C function
+`pg_dpella_sample_random` in the extension when hitting the SQL function
+`dpella_sample_random`. This information is defined for the Postgres extension
+is provided into
+[dpella-ffi-ext--1.0.sql](./dpella-ffi/pg_extension/dpella-ffi-ext--1.0.sql):
     
     ```SQL CREATE FUNCTION dpella_sample_random(result FLOAT8, param FLOAT8)
     RETURNS FLOAT8 AS 'MODULE_PATHNAME', 'pg_dpella_sample_random' LANGUAGE C
     IMMUTABLE STRICT;   
     ```
 
-    This C code then calls into the C function 
-    `dpella_sample_random_hs` which is exported by the Haskell FFI 
-    [DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs): 
+This C code then calls into the C function `dpella_sample_random_hs` which is
+exported by the Haskell FFI [DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs): 
 
     ```haskell
     foreign export ccall "dpella_sample_random_hs"
         wrappedDpellaSampleRandom :: CDouble -> CDouble -> IO CDouble
     ```
 
-    So, when `dpella_sample_random_hs` get invoked, then the Haskell 
-    function `wrappedDpellaSampleRandom` gets called, which subsequently 
-    calls `dpellaSampleRandom`. 
+So, when `dpella_sample_random_hs` get invoked, then the Haskell function
+`wrappedDpellaSampleRandom` gets called, which subsequently calls
+`dpellaSampleRandom`. 
 
     ```haskell 
     wrappedDpellaSampleRandom :: CDouble -> CDouble -> IO CDouble
     wrappedDpellaSampleRandom = wrap2 dpellaSampleRandom
     ```
 
-    Postgres extensions most be initialized and finished using C functions 
-    `_PG_init` and `_PG_fini`. These functions then call the Haskell FFI 
-    provided functions `init_hs` and `hs_exit` to initialize and finished 
-    the Haskell runtime ([dpella-ffi-ext.c](./dpella-ffi/pg_extension/dpella-ffi-ext.c)): 
+Postgres extensions most be initialized and finished using C functions
+`_PG_init` and `_PG_fini`. These functions then call the Haskell FFI provided
+functions `init_hs` and `hs_exit` to initialize and finished the Haskell runtime
+([dpella-ffi-ext.c](./dpella-ffi/pg_extension/dpella-ffi-ext.c)): 
 
     ```C 
     void _PG_init(void) {
@@ -269,22 +268,23 @@ mechanisms*.
      hs_exit();
     }
     ```
-    
-    * **MySQL**: As a stand-alone RDBMS, it runs in a separate process from the
-    Haskell runtime. Custom SQL functions are dynamically loaded using [MySQL's
-    User Defined Function (UDF)
-    mechanism](https://dev.mysql.com/doc/refman/8.4/en/create-function-loadable.html), where 
-    `CREATE FUNCTION` defines *loadable functions* 
-    (see file [init.sql](./dpella-ffi/mysql_plugin/init.sql)): 
+
+### MySQL 
+
+As a stand-alone RDBMS, it runs in a separate process from the Haskell runtime.
+Custom SQL functions are dynamically loaded using [MySQL's User Defined Function
+(UDF)
+mechanism](https://dev.mysql.com/doc/refman/8.4/en/create-function-loadable.html),
+where `CREATE FUNCTION` defines *loadable functions* (see file
+[init.sql](./dpella-ffi/mysql_plugin/init.sql)): 
 
     ```SQL 
     CREATE FUNCTION dpella_sample_random RETURNS REAL SONAME "libdpella_ffi_mysql.so";
     ```
 
-    When MySQL invokes `dpella_sample_random`, then it calls functions with the
-    same name found in the library `libdpella_ffi_mysql.so`. This library source
-    C code is in
-    [dpella_ffi_mysql.c](./dpella-ffi/mysql_plugin/dpella_ffi_mysql.c): 
+When MySQL invokes `dpella_sample_random`, then it calls functions with the same
+name found in the library `libdpella_ffi_mysql.so`. This library source C code
+is in [dpella_ffi_mysql.c](./dpella-ffi/mysql_plugin/dpella_ffi_mysql.c): 
 
     ```C 
     int dpella_sample_random_init(UDF_INIT *initid, UDF_ARGS *args, char *message) ;
@@ -292,8 +292,8 @@ mechanisms*.
     double dpella_sample_random(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *error) ;
     ```
 
-    The C function `dpella_sample_random` acts as bridge, calling the
-    FFI-exposed C function `dpella_sample_random_hs`: 
+The C function `dpella_sample_random` acts as bridge, calling the
+FFI-exposed C function `dpella_sample_random_hs`: 
 
     ```C 
     double dpella_sample_random(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *error) {
@@ -307,12 +307,10 @@ mechanisms*.
     }
     ```
 
-    The Haskell runtime is initialized
-    upon the first function call -- see code in `dpella_sample_random_init` and
-    the call to `hs_init`. 
-    The C functions mentioned above use a mutex for thread safety and
-    remains active for the lifetime of the MySQL process -- in fact, it never 
-    calls `hs_exit`. 
+The Haskell runtime is initialized upon the first function call -- see code in
+`dpella_sample_random_init` and the call to `hs_init`. The C functions mentioned
+above use a mutex for thread safety and remains active for the lifetime of the
+MySQL process -- in fact, it never calls `hs_exit`. 
 
 ## **4. Commonalities Across Engines**
 
