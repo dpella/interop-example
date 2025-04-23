@@ -186,11 +186,10 @@ updates to give place to the next random number.
    database process where the Haskell runtime is loaded.
 
 **Use of foreign function interface (FFI):** Both Postgres and MySQL
-integrations rely on Haskell's FFI (`foreign export ccall` in [DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs))
-to expose `wrappedDpellaSampleRandom` to the C bridge code. SQLite, on the other 
-hand, uses the `sqlite-simple` library's `createFunction` API directly
-without needing explicit FFI exports for this purpose---after all, as an
-embedded RDBMS runs in the same process as the Haskell runtime.
+integrations rely on Haskell's FFI (`foreign export ccall` in
+[DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs)). In contrast, SQLite, as an
+embedded RDBMS, do not need FFI since everything runs under the same process in
+the Haskell runtime.
 
 **Custom SQL Function Definition:** Each integration defines a custom SQL
 function named `dpella_sample_random` that invokes the Haskell implementation.
