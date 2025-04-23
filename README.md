@@ -197,25 +197,25 @@ This allows seamless invocation of Haskell functions from SQL queries via
 `query_`, as seen in `runSQLiteExample` in [Main.hs](./example/app/Main.hs).
 
 ```haskell
-    sumQuery :: IsString a => a
-    sumQuery = "SELECT dpella_sample_random(SUM(CAST(age as FLOAT)),CAST(10 AS FLOAT))"
-               ++ " FROM employees"
+sumQuery :: IsString a => a
+sumQuery = "SELECT dpella_sample_random(SUM(CAST(age as FLOAT)),CAST(10 AS FLOAT))"
+            ++ " FROM employees"
 
-    -- It declares the custom SQL function `dpella_sample_random`, and 
-    -- provides the semantics as the Haskell function `dpellaSampleRandom`
-    sqlDPellaSampleRandom :: SQLFunction
-    sqlDPellaSampleRandom =
-        SQLFunction "dpella_sample_random" $ dpellaSampleRandom . sqlite_env_rng
-    
-    runWithSampling = do 
-        -- Initialized the random seed 
-        env <- liftIO initSQLiteEnv
-        -- Get the connection 
-        conn <- getConnection
-        -- Register the function 
-        SQLite.createFunction conn sqlDPellaSampleRandom (impl env)
-        -- Running the query 
-        query_ sumQuery
+-- It declares the custom SQL function `dpella_sample_random`, and 
+-- provides the semantics as the Haskell function `dpellaSampleRandom`
+sqlDPellaSampleRandom :: SQLFunction
+sqlDPellaSampleRandom =
+    SQLFunction "dpella_sample_random" $ dpellaSampleRandom . sqlite_env_rng
+
+runWithSampling = do 
+    -- Initialized the random seed 
+    env <- liftIO initSQLiteEnv
+    -- Get the connection 
+    conn <- getConnection
+    -- Register the function 
+    SQLite.createFunction conn sqlDPellaSampleRandom (impl env)
+    -- Running the query 
+    query_ sumQuery
 ```
 
 ### PostgreSQL 
