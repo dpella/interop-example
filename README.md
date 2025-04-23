@@ -192,7 +192,7 @@ embedded RDBMS, do not need FFI since everything runs under the same process in
 the Haskell runtime.
 
 **Custom SQL Function Definition:** Each integration defines a custom SQL
-function named `dpella_sample_random` that invokes the Haskell implementation.
+function named `dpella_sample_random` that invokes the same Haskell function. 
 This provides a uniform SQL interface across engines, as used in `sumQuery`. 
 
 ## **5. Detailed Report and Comparison**
