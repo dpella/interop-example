@@ -181,7 +181,7 @@ updates to give place to the next random number.
    reference needs to be non-inlineable to avoid that the compiler inlines
    the creation of such reference at several places and ends up [creating
    more than one](https://stackoverflow.com/questions/75179027/global-state-with-ioref-why-doesnt-this-work). 
-   To hide the state from the API used by the RDBMS, `unsafePerformIO` is
+   To hide this state from the API used by the RDBMS, `unsafePerformIO` is
    being used, which implies that the `IORef` is shared state across all connections within the
    database process where the Haskell runtime is loaded.
 
