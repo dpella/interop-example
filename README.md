@@ -169,22 +169,21 @@ stateful. It utilizes a reference of type `NoiseGen` (`type NoiseGen = IORef Std
 to store the random seed. After each query, this reference gets 
 updates to give place to the next random number. 
 
-    - For SQLite as embedded RDBMS, this reference is managed by the environment
-      of the reader monad, i.e., within the environment of type `SQLEnv` created per
-      connection in `withSQLFunctions`. 
+ - For SQLite as embedded RDBMS, this reference is managed by the environment
+   of the reader monad, i.e., within the environment of type `SQLEnv` created per
+   connection in `withSQLFunctions`. 
 
-    - For Postgres and MySQL, as external RDBMS, state is managed by the Haskell
-      runtime. However, Postgres and MySQL do not see the random seed, i.e., it is an
-      internal state of the Haskell runtime. To manage that in a pure language like
-      Haskell, the module [DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs) defines a
-      global non-inlineable (`NOINLINE`) `IORef` called `nOISEGEN`. The
-      reference needs to be non-inlineable to avoid that the compiler inlines
-      the creation of such reference at several places and ends up [creating
-      more than
-      one](https://stackoverflow.com/questions/75179027/global-state-with-ioref-why-doesnt-this-work). 
-      To hide the state from the API used by the RDBMS, `unsafePerformIO` is
-      being used, which implies that the `IORef` is shared state across all connections within the
-      database process where the Haskell runtime is loaded.
+ - For Postgres and MySQL, as external RDBMS, state is managed by the Haskell
+   runtime. However, Postgres and MySQL do not see the random seed, i.e., it is an
+   internal state of the Haskell runtime. To manage that in a pure language like
+   Haskell, the module [DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs) defines a
+   global non-inlineable (`NOINLINE`) `IORef` called `nOISEGEN`. The
+   reference needs to be non-inlineable to avoid that the compiler inlines
+   the creation of such reference at several places and ends up [creating
+   more than one](https://stackoverflow.com/questions/75179027/global-state-with-ioref-why-doesnt-this-work). 
+   To hide the state from the API used by the RDBMS, `unsafePerformIO` is
+   being used, which implies that the `IORef` is shared state across all connections within the
+   database process where the Haskell runtime is loaded.
 
 **Use of foreign function interface (FFI):** Both Postgres and MySQL
 integrations rely on Haskell's FFI (`foreign export ccall` in [DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs))
