@@ -315,19 +315,51 @@ MySQL process. In fact, the UDF mechanism never calls `hs_exit`.
 
 Despite differences in integration specifics, several common aspects are observed:
 
-* **Haskell Wrapper Modules:** Each engine has a corresponding Haskell module (`DPella.SQLite`, `DPella.Postgres`, `DPella.MySQL`) providing a monadic interface (`SQLiteT`, `PostgresT`, `MySQLT`) built on `ReaderT Connection m a`. These modules offer standardized functions like `run*`, `query`, `query_`, `execute`, and `execute_` to abstract database interactions.
-* **Core Haskell Logic:** All integrations ultimately call the same underlying Haskell function, `dpellaSampleRandom` from `DPella.Noise`, ensuring consistent behavior.
-* **Stateful Random Number Generation:** The core `dpellaSampleRandom` function utilizes a shared, stateful random number generator (`NoiseGen` implemented as an `IORef StdGen` in `DPella.Noise`).
-    * For SQLite, this state is managed within an `SQLEnv` created per connection context in `withSQLFunctions`.
-    * For PostgreSQL and MySQL, state is managed via a global `NOINLINE` `IORef` (`nOISEGEN`) within the FFI module (`DPella_FFI.hs`), made accessible via `unsafePerformIO`. This implies shared state across all connections within the database process where the Haskell runtime is loaded.
-* **Use of Foreign Function Interface (FFI):** Both PostgreSQL and MySQL integrations rely on Haskell's FFI (`foreign export ccall` in `DPella_FFI.hs`) to expose `wrappedDpellaSampleRandom` to the C bridge code. SQLite, running in-process, uses the `sqlite-simple` library's `createFunction` API directly without needing explicit FFI exports for this purpose.
-* **Custom SQL Function Definition:** Each integration defines a custom SQL function named `dpella_sample_random` that invokes the Haskell implementation. This provides a uniform SQL interface across engines, as used in `sumQuery` within `app/Main.hs`.
-    ```haskell
-    -- Defined in app/Main.hs
-    sumQuery :: IsString a => a
-    sumQuery = "SELECT SUM(CAST(age as FLOAT)) + dpella_sample_random(CAST(18 AS FLOAT),CAST(67 AS FLOAT)) FROM employees"
-    ```
-* **Modular Design:** The project structure separates core Haskell logic (`dpella-base`), FFI bindings (`dpella-ffi`), engine-specific Haskell wrappers (`dpella-sqlite`, `dpella-postgres`, `dpella-mysql`), and the example application (`example`).
+**Modular Design:** The project structure separates Haskell logic
+([dpella-base](./dpella-base/)), FFI bindings ([dpella-ffi](./dpella-ffi/)), engine-specific Haskell 
+interoperability modules ([dpella-sqlite](./dpella-sqlite/), [dpella-postgres](./dpella-postgres/), [dpella-mysql](./dpella-mysql/)), and the example application ([example](./example/)).
+
+**Haskell interoperability modules**: Each engine has a corresponding Haskell
+module that provides a monadic interface built on `ReaderT Connection m a`,
+standardizing functions for database interactions (see modules 
+[`DPella.SQLite`](./dpella-sqlite/src/DPella/SQLite.hs),
+[`DPella.Postgres`](./dpella-postgres/src/DPella/Postgres.hs), and
+[`DPella.MySQL`](./dpella-mysql/src/DPella/MySQL.hs)). The interface 
+provides functions for running (i.e., `runSQLite`, `runPostgres`, and `runMySQL`),
+querying (i.e., `query` and `query_`), and modifying (i.e., `execute` and
+`execute_`) the dataset. 
+
+**Custom SQL Function Definition:** Each integration defines the custom SQL
+function named `dpella_sample_random`. 
+
+**Haskell logic**: All interoperability modules ultimately call the same underlying Haskell function, `dpellaSampleRandom` from [Noise.hs](./dpella-base/src/DPella/Noise.hs), therefore ensuring consistent behavior across the different RDBMS.
+
+**Use of foreign function interface (FFI):** Both Postgres and MySQL
+integrations rely on Haskell's FFI (`foreign export ccall` in
+[DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs)). In contrast, SQLite, as an
+embedded RDBMS, do not need FFI since everything runs under the same process in
+the Haskell runtime.
+
+**Stateful random number generation:** The function `dpellaSampleRandom` is
+stateful. It utilizes a reference of type `NoiseGen` (`type NoiseGen = IORef StdGen`) 
+to store the random seed. After each query, this reference gets 
+updates to give place to the next random number. 
+
+ - For SQLite as embedded RDBMS, this reference is managed by the environment
+   of the reader monad, i.e., within the environment of type `SQLEnv` created per
+   connection in `withSQLFunctions`. 
+
+ - For Postgres and MySQL, as external RDBMS, state is managed by the Haskell
+   runtime. However, Postgres and MySQL do not see the random seed, i.e., it is an
+   internal state of the Haskell runtime. To manage that in a pure language like
+   Haskell, the module [DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs) defines a
+   global non-inlineable (`NOINLINE`) `IORef` called `nOISEGEN`. The
+   reference needs to be non-inlineable to avoid that the compiler inlines
+   the creation of such reference at several places and ends up [creating
+   more than one](https://stackoverflow.com/questions/75179027/global-state-with-ioref-why-doesnt-this-work). 
+   To hide this state from the API used by the RDBMS, `unsafePerformIO` is
+   being used, which implies that the `IORef` is shared state across all connections within the
+   database process where the Haskell runtime is loaded.
 
 ## **5. Detailed Report and Comparison**
 
