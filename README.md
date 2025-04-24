@@ -19,7 +19,7 @@ databases such as PostgreSQL and MySQL.
 
 The next figure shows the general idea of the project. 
 
-![General architecture idea](./fig/arch1.gif)
+![General architecture idea](./fig/arch1.png)
 
 The RDBMS will send data -- often the result of certain data analyses -- when
 running SQL queries to DPella's implementation. DPella will *inject noise to
@@ -41,7 +41,7 @@ purity) within their existing database workflows.
 We will zoom in into the architecture shown above with a concrete example that
 we will use in the rest of the report. 
 
-![Two different runtimes](./fig/arch2.gif) 
+![Two different runtimes](./fig/arch2.png) 
 
 The example focuses on SQL queries being able to call the Haskell function
 `dpellaSampleRandom` (implemented in [Noise.hs](./dpella-base/src/DPella/Noise.hs)) which
