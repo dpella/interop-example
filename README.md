@@ -1,34 +1,35 @@
 # **Report: Integrating Custom Haskell Functions with SQL Engines (SQLite, PostgreSQL, MySQL)**
 
-## Introduction 
+## **1. Introduction**
 
 At DPella, we leverage advanced programming language techniques in Haskell,
-particularly its powerful type system, to develop robust and 
-*correct by construction* applications. However, while Haskell excels in
+particularly its powerful type system, to develop robust and
+*correct-by-construction* applications. However, while Haskell excels in
 enforcing complex invariants with type safety, it is not ideally suited for
 processing large volumes of data. In contrast, relational databases are
 designed for efficient data management and processing. In this repository, we
 explore how we can offload data processing tasks to relational databases while
-utilizing Haskell's capabilities for injecting noise into the data. 
+utilizing Haskell's capabilities for injecting noise into the data.
 
 The primary goal of this repository is to establish effective communication
 between the Haskell runtime and the database engine runtime, enabling the
 execution of Haskell logic directly within SQL queries. We focus on integrating
-custom functions with both embedded databases like SQLite and external
-databases such as PostgreSQL and MySQL.
+custom functions with both embedded databases like
+[SQLite](https://www.sqlite.org/) and external databases such as
+[PostgreSQL](https://www.postgresql.org/) and [MySQL](https://www.mysql.com/).
 
-The next figure shows the general idea of the project. 
+The next figure shows the general idea of the project.
 
 ![General architecture idea](./fig/arch1.png)
 
-The RDBMS will send data -- often the result of certain data analyses -- when
+The DBRMS will send data -- often the result of certain data analyses -- when
 running SQL queries to DPella's implementation. DPella will *inject noise to
 those results to protect the privacy of the individuals contributing with their
 data to the dataset being analyzed -- DPella applies Differential Privacy
 technology for this. The resulting noisy results and then send back to the
-engine for further processing if needed. 
+engine for further processing if needed.
 
-Generally speaking, this report details and compares methods for RDBMS being
+Generally speaking, this report details and compares methods for DBRMS being
 able to call functions written in the Haskell. We evaluate three popular SQL
 database engines: SQLite, PostgreSQL, and MySQL. The primary goal is to enable
 the execution of Haskell logic by SQL queries, such as complex algorithms or
@@ -36,26 +37,26 @@ specialized computations like adding Differential Privacy noise. By doing so,
 developers can leverage Haskell's strengths (e.g., type safety, functional
 purity) within their existing database workflows.
 
-## Motivating example
+## **2. Motivating example**
 
 We will zoom in into the architecture shown above with a concrete example that
-we will use in the rest of the report. 
+will be used in the rest of the report.
 
-![Two different runtimes](./fig/arch2.png) 
+![Two different runtimes](./fig/arch2.png)
 
 The example focuses on SQL queries being able to call the Haskell function
 `dpellaSampleRandom` (implemented in [Noise.hs](./dpella-base/src/DPella/Noise.hs)) which
 generates a random number within a given range, potentially as part of a
 Differential Privacy mechanism. This function requires managing state (the
-random number generator) across calls. 
+random number generator) across calls.
 
 To call that function, queries use the SQL function `dpella_sample_random`. The
-challenge here is three-fold: (i) to make the RDBMS to connect the SQL function
+challenges here are three-fold: (i) to make the DBRMS to connect the SQL function
 `dpella_sample_random` with the code in `dpellaSampleRandom`; (ii) passing all
 the SQL arguments as `dpellaSampleRandom`'s arguments; and (iii) passing the
 result of `dpellaSampleRandom` as the SQL result of `dpella_sample_random`.
 
-## Running example
+### Running example
 
 Set up the environment (builds Docker image with dependencies and extensions):
 
@@ -65,20 +66,20 @@ docker build -t sql-interoperability-example .
 
 
 We consider a table of employees, where each row contains the name of the
-employee, her/his age, and a boolean flag to indicate if she/he is still
-employed (see code in [Main.hs](./example/app/Main.hs)). 
+employee, their age, and a boolean flag to indicate if they are still
+employed (see code in [Main.hs](./example/app/Main.hs)).
 
-The example creates the table of employees, inserts some hard coded records, 
-and executes the following query four times -- so that randomness can be seen. 
+The example creates the table of employees, inserts some hard coded records,
+and executes the following query four times -- so that randomness can be seen.
 
-```SQL 
-SELECT SUM(CAST(age as FLOAT)) + dpella_sample_random(CAST(18 AS FLOAT),CAST(67 AS FLOAT)) 
+```SQL
+SELECT SUM(CAST(age as FLOAT)) + dpella_sample_random(CAST(18 AS FLOAT),CAST(67 AS FLOAT))
 FROM employees
 ```
 
 This query obtains the sum of all the ages and then adds a random number
 between `18` and `67`. The reason to include `AS FLOAT` in the constants above
-is connected to data marshalling across the RDBMS and Haskell (explained
+is connected to data marshalling across the DBRMS and Haskell (explained
 later).
 
 Run the example (executes [Main.hs](./example/app/Main.hs) within the Docker container):
@@ -88,7 +89,7 @@ docker run  sql-interoperability-example
 ```
 
 The following output shows how we run such SQL operations in three different SQL
-engines, i.e., SQLite, Postgres, and MySQL. 
+engines, i.e., SQLite, Postgres, and MySQL.
 
 ```plaintext
 --- Running SQLite Example ---
@@ -130,19 +131,19 @@ approaches.
 
 ## **3. Overview**
 
-This repository demonstrates how to call to Haskell's code when 
-executing the SQL function `dpella_sample_random` across the RDBMS 
-SQLite, PostgreSQL, and MySQL. At the top level, the approach consists 
-on the following parts: 
+This repository demonstrates how to call to Haskell's code when
+executing the SQL function `dpella_sample_random` across the DBRMS
+SQLite, PostgreSQL, and MySQL. At the top level, the approach consists
+on the following parts:
 
-- Defining the Haskell function that gives semantics to the SQL function 
+- Defining the Haskell function that gives semantics to the SQL function
 `dpella_sample_random` (`dpellaSampleRandom` in [Noise.hs](./dpella-base/src/DPella/Noise.hs)) and its state (of type `NoiseGen`).
 
 - Providing Haskell interoperability modules
   [SQLite.hs](./dpella-sqlite/src/DPella/SQLite.hs),
   [Postgres.hs](./dpella-postgres/src/DPella/Postgres.hs), and
   [MySQL.hs](./dpella-mysql/src/DPella/MySQL.hs). All three modules provide a
-  monadic interface for interacting with their respective RDBMS. 
+  monadic interface for interacting with their respective DBRMS.
 
   Each module includes functions to establish and manage database connections.
 
@@ -156,11 +157,11 @@ on the following parts:
 
   `SQLiteT`, `PostgresT`, and `MySQLT` are all monad transformers that extend
   the base monad (often `IO`) to include additional functionality specific to
-  their respective database operations. 
+  their respective database operations.
 
-  These modules also support executing SQL queries, i.e., `SELECT`, 
+  These modules also support executing SQL queries, i.e., `SELECT`,
 
-  ```haskell 
+  ```haskell
   SQLite.query_   :: (SQLite.FromRow res, MonadIO m) => SQLite.Query -> SQLiteT m [res]
 
   Postgres.query_ :: (Postgres.FromRow res, MonadIO m) => Postgres.Query -> PostgresT m [res]
@@ -168,9 +169,9 @@ on the following parts:
   MySQL.query_    :: (MySQL.QueryResults res, MonadIO m) => MySQL.Query -> MySQLT m [res]
   ```
 
-  as well as SQL instructions that modify the dataset, e.g., `UPDATE`, `INSERT`, and `CREATE`. 
+  as well as SQL instructions that modify the dataset, e.g., `UPDATE`, `INSERT`, and `CREATE`.
   However, to run those instructions, it is needed another set of functions
-  which receive an extra argument (`res`) of the data to be inserted. 
+  which receive an extra argument (`res`) of the data to be inserted.
 
   ```haskell
   SQLite.execute   :: (SQLite.ToRow res, MonadIO m) => SQLite.Query -> res -> SQLiteT m Int
@@ -181,15 +182,15 @@ on the following parts:
   ```
 
   The modules also have functions to manage transactions and error handling but
-  we do not describe them any further. 
+  we do not describe them any further.
 
-- Making the RDBMS aware of the SQL function `dpella_sample_random` and which
-code to execute when being called. This tasks is implemented using 
+- Making the DBRMS aware of the SQL function `dpella_sample_random` and which
+code to execute when being called. This tasks is implemented using
 *SQL engine-specific mechanisms* and are described below.
 
 ### SQLite
 
-Since it is an *embedded* RDBMS, it runs within the same process as the Haskell
+Since it is an *embedded* DBRMS, it runs within the same process as the Haskell
 application defined in [Main.hs](./example/app/Main.hs). SQL custom functions,
 e.g., `dpella_sample_random`, are directly registered using the API from the
 Haskell package `sqlite-simple` (see function `DPella.SQLite.withSQLFunctions`).
@@ -201,43 +202,43 @@ sumQuery :: IsString a => a
 sumQuery = "SELECT dpella_sample_random(SUM(CAST(age as FLOAT)),CAST(10 AS FLOAT))"
             ++ " FROM employees"
 
--- It declares the custom SQL function `dpella_sample_random`, and 
+-- It declares the custom SQL function `dpella_sample_random`, and
 -- provides the semantics as the Haskell function `dpellaSampleRandom`
 sqlDPellaSampleRandom :: SQLFunction
 sqlDPellaSampleRandom =
     SQLFunction "dpella_sample_random" $ dpellaSampleRandom . sqlite_env_rng
 
-runWithSampling = do 
-    -- Initialized the random seed 
+runWithSampling = do
+    -- Initialized the random seed
     env <- liftIO initSQLiteEnv
-    -- Get the connection 
+    -- Get the connection
     conn <- getConnection
-    -- Register the function 
+    -- Register the function
     SQLite.createFunction conn sqlDPellaSampleRandom (impl env)
-    -- Running the query 
+    -- Running the query
     query_ sumQuery
 ```
 
-### PostgreSQL 
+### PostgreSQL
 
-As a stand-alone RDBMS, it runs in a separate process as the Haskell code.
+As a stand-alone DBRMS, it runs in a separate process as the Haskell code.
 Integration is achieved by creating a *PostgreSQL extension* (see folder
 [dpella-ffi-ext/pg_extension](./dpella-ffi/pg_extension/)) as a shared library
-written in C ([dpella-ffi-ext.c](./dpella-ffi/pg_extension/dpella-ffi-ext.c)). 
+written in C ([dpella-ffi-ext.c](./dpella-ffi/pg_extension/dpella-ffi-ext.c)).
 
-Intuitively, Postgress will call into the C function
+Intuitively, Postgres will call into the C function
 `pg_dpella_sample_random` in the extension when hitting the SQL function
 `dpella_sample_random`. This information is defined for the Postgres extension
 file [dpella-ffi-ext--1.0.sql](./dpella-ffi/pg_extension/dpella-ffi-ext--1.0.sql):
-    
-```SQL 
+
+```SQL
 CREATE FUNCTION dpella_sample_random(result FLOAT8, param FLOAT8)
 RETURNS FLOAT8 AS 'MODULE_PATHNAME', 'pg_dpella_sample_random' LANGUAGE C
-IMMUTABLE STRICT;   
+IMMUTABLE STRICT;
 ```
 
 This C code then calls into the C function `dpella_sample_random_hs` which is
-exported by the Haskell FFI [DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs): 
+exported by the Haskell FFI [DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs):
 
 ```haskell
 foreign export ccall "dpella_sample_random_hs"
@@ -246,9 +247,9 @@ foreign export ccall "dpella_sample_random_hs"
 
 So, when `dpella_sample_random_hs` get invoked, then the Haskell function
 `wrappedDpellaSampleRandom` gets called, which subsequently calls
-`dpellaSampleRandom`. 
+`dpellaSampleRandom`.
 
-```haskell 
+```haskell
 wrappedDpellaSampleRandom :: CDouble -> CDouble -> IO CDouble
 wrappedDpellaSampleRandom = wrap2 dpellaSampleRandom
 ```
@@ -256,9 +257,9 @@ wrappedDpellaSampleRandom = wrap2 dpellaSampleRandom
 Postgres extensions most be initialized and finished using C functions
 `_PG_init` and `_PG_fini`. These functions then call the Haskell FFI provided
 functions `init_hs` and `hs_exit` to initialize and finished the Haskell runtime
-([dpella-ffi-ext.c](./dpella-ffi/pg_extension/dpella-ffi-ext.c)): 
+([dpella-ffi-ext.c](./dpella-ffi/pg_extension/dpella-ffi-ext.c)):
 
-```C 
+```C
 void _PG_init(void) {
     hs_init(NULL, NULL);
 }
@@ -268,33 +269,33 @@ void _PG_fini(void) {
 }
 ```
 
-### MySQL 
+### MySQL
 
-As a stand-alone RDBMS, it runs in a separate process from the Haskell runtime.
+As a stand-alone DBRMS, it runs in a separate process from the Haskell runtime.
 Custom SQL functions are dynamically loaded using [MySQL's User Defined Function
 (UDF)
 mechanism](https://dev.mysql.com/doc/refman/8.4/en/create-function-loadable.html),
 where `CREATE FUNCTION` defines *loadable functions* (see file
-[init.sql](./dpella-ffi/mysql_plugin/init.sql)): 
+[init.sql](./dpella-ffi/mysql_plugin/init.sql)):
 
-```SQL 
+```SQL
 CREATE FUNCTION dpella_sample_random RETURNS REAL SONAME "libdpella_ffi_mysql.so";
 ```
 
-When MySQL invokes `dpella_sample_random`, then it calls functions with the same
-name found in the library `libdpella_ffi_mysql.so`. This library source C code
-is in [dpella_ffi_mysql.c](./dpella-ffi/mysql_plugin/dpella_ffi_mysql.c): 
+When MySQL invokes `dpella_sample_random`, it calls functions with the same
+name found in the library `libdpella_ffi_mysql.so`. The C source code of this
+library can be found in [dpella_ffi_mysql.c](./dpella-ffi/mysql_plugin/dpella_ffi_mysql.c):
 
-```C 
+```C
 int dpella_sample_random_init(UDF_INIT *initid, UDF_ARGS *args, char *message) ;
 void dpella_sample_random_deinit(UDF_INIT *initid) ;
 double dpella_sample_random(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *error) ;
 ```
 
 The C function `dpella_sample_random` acts as bridge, calling the
-FFI-exposed C function `dpella_sample_random_hs`: 
+FFI-exposed C function `dpella_sample_random_hs`:
 
-```C 
+```C
 double dpella_sample_random(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *error) {
     double arg1 = *((double*)args->args[0]);
     double arg2 = *((double*)args->args[1]);
@@ -308,56 +309,56 @@ double dpella_sample_random(UDF_INIT *initid, UDF_ARGS *args, char *is_null, cha
 
 The Haskell runtime is initialized upon the first function call -- see code in
 `dpella_sample_random_init` and the call to `hs_init`. The C functions mentioned
-above use a mutex for thread safety and remains active for the lifetime of the
-MySQL process. In fact, the UDF mechanism never calls `hs_exit`. 
+above use a mutex for thread safety and remain active for the lifetime of the
+MySQL process. In fact, the UDF mechanism never calls `hs_exit`.
 
 ## **4. Commonalities Across Engines**
 
 Despite differences in integration specifics, several common aspects are observed:
 
 **Modular Design:** The project structure separates Haskell logic
-([dpella-base](./dpella-base/)), FFI bindings ([dpella-ffi](./dpella-ffi/)), engine-specific Haskell 
+([dpella-base](./dpella-base/)), FFI bindings ([dpella-ffi](./dpella-ffi/)), engine-specific Haskell
 interoperability modules ([dpella-sqlite](./dpella-sqlite/), [dpella-postgres](./dpella-postgres/), [dpella-mysql](./dpella-mysql/)), and the example application ([example](./example/)).
 
 **Haskell interoperability modules**: Each engine has a corresponding Haskell
 module that provides a monadic interface built on `ReaderT Connection m a`,
-standardizing functions for database interactions (see modules 
+standardizing functions for database interactions (see modules
 [`DPella.SQLite`](./dpella-sqlite/src/DPella/SQLite.hs),
 [`DPella.Postgres`](./dpella-postgres/src/DPella/Postgres.hs), and
-[`DPella.MySQL`](./dpella-mysql/src/DPella/MySQL.hs)). The interface 
+[`DPella.MySQL`](./dpella-mysql/src/DPella/MySQL.hs)). The interface
 provides functions for running (i.e., `runSQLite`, `runPostgres`, and `runMySQL`),
 querying (i.e., `query` and `query_`), and modifying (i.e., `execute` and
-`execute_`) the dataset. 
+`execute_`) the dataset.
 
 **Custom SQL Function Definition:** Each integration defines the custom SQL
-function named `dpella_sample_random`. 
+function named `dpella_sample_random`.
 
-**Haskell logic**: All interoperability modules ultimately call the same underlying Haskell function, `dpellaSampleRandom` from [Noise.hs](./dpella-base/src/DPella/Noise.hs), therefore ensuring consistent behavior across the different RDBMS.
+**Haskell logic**: All interoperability modules ultimately call the same underlying Haskell function, `dpellaSampleRandom` from [Noise.hs](./dpella-base/src/DPella/Noise.hs), therefore ensuring consistent behavior across the different DBRMS.
 
 **Use of foreign function interface (FFI):** Both Postgres and MySQL
 integrations rely on Haskell's FFI (`foreign export ccall` in
 [DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs)). In contrast, SQLite, as an
-embedded RDBMS, do not need FFI since everything runs under the same process in
+embedded DBRMS, do not need FFI since everything runs under the same process in
 the Haskell runtime.
 
 **Stateful random number generation:** The function `dpellaSampleRandom` is
-stateful. It utilizes a reference of type `NoiseGen` (`type NoiseGen = IORef StdGen`) 
-to store the random seed. After each query, this reference gets 
-updates to give place to the next random number. 
+stateful. It utilizes a reference of type `NoiseGen` (`type NoiseGen = IORef StdGen`)
+to store the random seed. After each query, this reference gets
+updates to give place to the next random number.
 
- - For SQLite as embedded RDBMS, this reference is managed by the environment
+ - For SQLite as embedded DBRMS, this reference is managed by the environment
    of the reader monad, i.e., within the environment of type `SQLEnv` created per
-   connection in `withSQLFunctions`. 
+   connection in `withSQLFunctions`.
 
- - For Postgres and MySQL, as external RDBMS, state is managed by the Haskell
+ - For Postgres and MySQL, as external DBRMS, state is managed by the Haskell
    runtime. However, Postgres and MySQL do not see the random seed, i.e., it is an
    internal state of the Haskell runtime. To manage that in a pure language like
    Haskell, the module [DPella_FFI.hs](./dpella-ffi/src/DPella_FFI.hs) defines a
    global non-inlineable (`NOINLINE`) `IORef` called `nOISEGEN`. The
    reference needs to be non-inlineable to avoid that the compiler inlines
    the creation of such reference at several places and ends up [creating
-   more than one](https://stackoverflow.com/questions/75179027/global-state-with-ioref-why-doesnt-this-work). 
-   To hide this state from the API used by the RDBMS, `unsafePerformIO` is
+   more than one](https://stackoverflow.com/questions/75179027/global-state-with-ioref-why-doesnt-this-work).
+   To hide this state from the API used by the DBRMS, `unsafePerformIO` is
    being used, which implies that the `IORef` is shared state across all connections within the
    database process where the Haskell runtime is loaded.
 
@@ -541,7 +542,7 @@ This repository demonstrates interoperability between Haskell and three SQL engi
 |                           |      | | |  `-> dpella_sample_random_hs | | |
 |                           |      | | +------|-----------------------+ | |
 |                           |      | +--------|-------------------------+ |
-|                           |      |          V (FFI Call)                | 
+|                           |      |          V (FFI Call)                |
 |                           |      | +------------------------------+     |
 |                           |      | | Haskell RTS (within MySQL)   |     |
 |                           |      | |------------------------------|     |

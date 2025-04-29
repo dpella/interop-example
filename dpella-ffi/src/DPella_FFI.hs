@@ -13,7 +13,7 @@ import System.IO.Unsafe
 
 import DPella.Noise
 
--- | Global noise generator, maintains state accross wrapped calls
+-- | Global noise generator, maintains state across wrapped calls
 {-# NOINLINE nOISEGEN #-}
 nOISEGEN :: NoiseGen
 nOISEGEN = unsafePerformIO newNoiseGen
