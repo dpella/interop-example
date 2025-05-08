@@ -364,35 +364,19 @@ updates to give place to the next random number.
 
 ## **5. Detailed Report and Comparison**
 
-This repository demonstrates interoperability between Haskell and three SQL engines. Each requires a different approach to integrate the `dpella_sample_random` Haskell function.
-
-
+This repository demonstrates interoperability between Haskell and three SQL
+engines. Each requires a different approach to integrate the
+`dpella_sample_random` Haskell function. Below, we outline the architecture, the
+integration architecture, mechanism and pro/cons of for each engine.
 
 ### **5.1. SQLite**
 
-```ascii
-+-------------------------------------------------+
-|             Haskell Application Process         |
-| +---------------------+   +-------------------+ |
-| |   app/Main.hs       |   | DPella.SQLite.hs  | |  (Runs :memory: DB)
-| |---------------------|   |-------------------| |
-| | SQL.runSQLite(...)  |   | withSQLFunctions  | |
-| |  |                  |   |  |                | |
-| |  `-> SQL.query_(..) |<--+  | createFunction | |<----+    (Haskell Func)
-| |        | "SELECT..  |   |  `->(impl env)----|------>| dpellaSampleRandom |
-| |        | dpella_..."|   +-------------------+ |     +--------------------+
-| |        V            |                         |     |   (Uses NoiseGen)  |
-| | +-------------------+                         |     +--------------------+
-| | |  sqlite-simple    |------------------------>|
-| | | (SQLite C Lib)    |<--- Response <----------|
-| | +-------------------+                         |
-+-------------------------------------------------+
-```
+![SQlite workflow](./fig/sqlite-workflow.png)
 
 * **Explanation:** The Haskell application (`app/Main.hs`) uses the `DPella.SQLite` wrapper. `withSQLFunctions` registers the `dpellaSampleRandom` Haskell function directly with the in-process SQLite library (`sqlite-simple`) using `createFunction`. SQL queries executed via `query_` can then directly call `dpella_sample_random`, which executes the registered Haskell code within the same process.
 
-
 * **Integration:** Runs in-process with the Haskell application. Functions are registered/unregistered directly using `sqlite-simple`'s API within `DPella.SQLite.withSQLFunctions`. An `SQLEnv` holding the `NoiseGen` is created for the scope of the connection.
+
 * **Invocation Mechanism:** The Haskell function `dpellaSampleRandom` is wrapped and registered with the SQLite connection using `SQLite.createFunction`. The `SQLEnv` containing the stateful `NoiseGen` is passed to the implementation.
     ```haskell
     -- From dpella-sqlite/src/DPella/SQLite.hs
@@ -437,44 +421,12 @@ This repository demonstrates interoperability between Haskell and three SQL engi
 
 ### **5.2. PostgreSQL**
 
-```ascii
-+---------------------------+      +--------------------------------------+
-| Haskell App Process       |      | PostgreSQL Server Process            |
-| +-----------------------+ |      | +----------------------------------+ |
-| |    app/Main.hs        | |      | | SQL Engine                       | |
-| |-----------------------| |      | |----------------------------------| |
-| | PG.runPostgres(...)   | |      | | "SELECT...dpella_sample_random"  | |
-| |  |                    | |      | |        |                         | |
-| |  `-> PG.query_(...) --|------> | |        V                         | |
-| +-----------------------+ | CONN | | +------------------------------+ | |
-|                           |      | | | dpella-ffi-ext.so (C Ext.)   | | |
-|                           |      | | |------------------------------| | |
-|                           |      | | | _PG_init() -> hs_init()      | | |
-|                           |      | | | pg_dpella_sample_random()    | | |
-|                           |      | | |  |                           | | |
-|                           |      | | |  `-> dpella_sample_random_hs | | |
-|                           |      | | +------|-----------------------+ | |
-|                           |      | +--------|-------------------------+ |
-|                           |      |          V (FFI Call)                |
-|                           |      | +------------------------------+     |
-|                           |      | | Haskell RTS (within PG Proc) |     |
-|                           |      | |------------------------------|     |
-|                           |      | | DPella_FFI.hs                |     |
-|                           |      | |  `- wrappedDpellaSampleRandom|     |
-|                           |      | |     (Uses global NoiseGen)   |     |
-|                           |      | +------------------------------+     |
-|                           | <----|- Response                            |
-|                           | CONN |                                      |
-+---------------------------+      +--------------------------------------+
-
-```
+![PostgreSQL workflow](./fig/postgres-workflow.png)
 
 * **Explanation:** The Haskell app connects to the separate PostgreSQL server. An SQL query uses `dpella_sample_random`. PostgreSQL maps this (via `CREATE FUNCTION`) to the C function `pg_dpella_sample_random` in the loaded extension (`dpella-ffi-ext.so`). This C function calls the Haskell function `dpella_sample_random_hs` via the Foreign Function Interface (FFI). The Haskell code runs within the Haskell Runtime System (RTS) initialized (`hs_init`) inside the PostgreSQL process.
 
-
-
-
 * **Integration:** Runs as a separate process. Requires a C extension (`dpella-ffi-ext.c`) using FFI to call Haskell (`DPella_FFI.hs`). The Haskell runtime is explicitly managed via `hs_init`/`hs_exit` in `_PG_init`/`_PG_fini`. The extension is created via SQL (`dpella-ffi-ext--1.0.sql`). State (`NoiseGen`) is global within the FFI module.
+
 * **Invocation Mechanism:** The SQL function `dpella_sample_random` is linked to the C function `pg_dpella_sample_random`. This C function retrieves arguments and calls the Haskell function `dpella_sample_random_hs` (which is the FFI export name for `wrappedDpellaSampleRandom`) via the FFI stub header.
     ```sql
     -- From dpella-ffi/pg_extension/dpella-ffi-ext--1.0.sql
@@ -607,11 +559,15 @@ This repository demonstrates interoperability between Haskell and three SQL engi
 
 ## **6. Summary of Approaches**
 
-| Engine      | Integration Method      | Complexity | Scalability | Runtime Management           | State (`NoiseGen`) Scope | Invocation Path                     |
-| :---------- | :---------------------- | :--------- | :---------- | :--------------------------- | :----------------------- | :---------------------------------- |
-| SQLite      | Direct API registration | Low        | Low         | Simple (App scope)           | Per Connection (`SQLEnv`)  | SQL -> `sqlite-simple` -> Haskell |
-| PostgreSQL  | C Extension + FFI       | High       | High        | Explicit (`_PG_init`/`_fini`)  | Global FFI Module        | SQL -> C Extension -> FFI -> Haskell |
-| MySQL       | C UDF + FFI             | Medium     | Medium      | Lazy Init (First Call)       | Global FFI Module        | SQL -> C UDF -> FFI -> Haskell    |
+| Feature                  | SQLite                            | PostgreSQL                           | MySQL                          |
+| :----------------------- | :-------------------------------- | :----------------------------------- | :----------------------------- |
+| Integration method       | Direct API registration           | C Extension + FFI                    | C UDF + FFI                    |
+| Complexity               | Low                               | High                                 | Medium                         |
+| Scalability              | Limited (single process)          | High                                 | Medium                         |
+| Runtime management       | Simple (App scope)                | Explicit (`_PG_init`)                | Lazy Init (First Call)         |
+| State (`NoiseGen`) Scope | Per Connection (`SQLEnv`)         | Global FFI Module                    | Global FFI Module              |
+| Invocation Path          | SQL -> `sqlite-simple` -> Haskell | SQL -> C Extension -> FFI -> Haskell | SQL -> C UDF -> FFI -> Haskell |
+| Best use case            | Lightweight domains               | Large scale, complex queries         | Moderate load                  |
 
 ## **7. Conclusion**
 
