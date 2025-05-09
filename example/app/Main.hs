@@ -38,7 +38,7 @@ insertQuery :: IsString a => a
 insertQuery = "INSERT INTO employees (name, age, is_employed) VALUES (?, ?, ?)"
 
 createTableQuery :: (Semigroup a, IsString a) => a
-createTableQuery = 
+createTableQuery =
   "CREATE TABLE IF NOT EXISTS employees "
   <> "(id SERIAL PRIMARY KEY, "
   <> " name TEXT NOT NULL,"
@@ -89,8 +89,8 @@ runPostgresExample = do
         liftIO $ putStrLn $ "Sum of ages (PostgreSQL): " <> show totalAge
 
 -- PostgreSQL Example
-runMySQLxample :: IO ()
-runMySQLxample = do
+runMySQLExample :: IO ()
+runMySQLExample = do
     let connStr = "mysql://test:test@localhost:3306/test"
     putStrLn "\n--- Running MySQL Example ---"
     putStrLn $ "Connecting to: " <> connStr
@@ -116,4 +116,4 @@ main :: IO ()
 main = do
   runSQLiteExample
   runPostgresExample
-  runMySQLxample
+  runMySQLExample
