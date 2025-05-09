@@ -188,7 +188,7 @@ on the following parts:
 code to execute when being called. This tasks is implemented using
 *SQL engine-specific mechanisms* and are described below.
 
-### SQLite
+### 3.1 SQLite
 
 Since it is an *embedded* DBRMS, it runs within the same process as the Haskell
 application defined in [Main.hs](./example/app/Main.hs). SQL custom functions,
@@ -219,7 +219,7 @@ runWithSampling = do
     query_ sumQuery
 ```
 
-### PostgreSQL
+### 3.2 PostgreSQL
 
 As a stand-alone DBRMS, it runs in a separate process as the Haskell code.
 Integration is achieved by creating a *PostgreSQL extension* (see folder
@@ -269,7 +269,7 @@ void _PG_fini(void) {
 }
 ```
 
-### MySQL
+### 3.3 MySQL
 
 As a stand-alone DBRMS, it runs in a separate process from the Haskell runtime.
 Custom SQL functions are dynamically loaded using [MySQL's User Defined Function
