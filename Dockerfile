@@ -148,7 +148,7 @@ sudo service postgresql start
 /docker-entrypoint-initdb.d/init-postgresql.sh
 sudo service mariadb start
 /docker-entrypoint-initdb.d/init-mysql.sh
-cabal run example 
+cabal run example
 EOF
 RUN chmod +x /usr/local/bin/entrypoint
 

@@ -21,8 +21,8 @@ purpose, we provide a brief overview of the main components:
 
 - [Dockerfile](./Dockerfile): A Dockerfile for building a containerized
   environment to run the examples and tests. Refer to the [Technical
-  Report](doc/technical-report.md) for instructions on how to build and run the
-  Docker container.
+  Report](doc/technical-report.md) for detailed instructions on how to build and
+  run the Docker container.
 
 - Implementation directories:
   - [dpella-base](./dpella-base): Contains the implementation for SQLite
@@ -39,6 +39,21 @@ purpose, we provide a brief overview of the main components:
     use the custom Haskell functions in the different database systems.
   - [scripts](./scripts): Contains database-specific initialization scripts and
     configuration files.
+
+## Quick Start
+
+This repository provides a quick start script to help you set up and run the
+examples. The script is located in the `scripts` directory and can be run
+directly from the command line when you are in the root directory:
+
+```bash
+./scripts/quick-setup.sh
+```
+
+This script will set up the necessary environment, build the required Docker
+image, and run the examples for each database system (i.e., SQLite, PostgreSQL,
+and MySQL). Make sure you have [Docker Engine](https://docs.docker.com/engine/)
+installed your machine before executing the script.
 
 ## License
 This project is distributed under the Mozilla License. See the
