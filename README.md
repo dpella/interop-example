@@ -55,6 +55,18 @@ image, and run the examples for each database system (i.e., SQLite, PostgreSQL,
 and MySQL). Make sure you have [Docker Engine](https://docs.docker.com/engine/)
 installed your machine before executing the script.
 
+## Acknowledgments
+
+Funded by the European Union. Views and opinions expressed are however those of
+the author(s) only and do not necessarily reflect those of the European Union or
+European Commission. Neither the Selected Third Parties Sub-Grant Agreement
+European Union nor the granting authority can be held responsible for them.
+Funded within the framework of the NGI Sargasso project under grant agreement No
+101092887.
+
+![NGI Sargasso](./doc/fig/logo-ngi-sargasso.png)
+![European Union](./doc/fig/logo-eu.png)
+
 ## License
 This project is distributed under the Mozilla License. See the
 [LICENSE](LICENSE) for more information.
