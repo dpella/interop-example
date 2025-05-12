@@ -20,7 +20,7 @@ custom functions with both embedded databases like
 
 The next figure shows the general idea of the project.
 
-![General architecture idea](../fig/arch1.png)
+![General architecture idea](./fig/arch1.png)
 
 The DBRMS will send data -- often the result of certain data analyses -- when
 running SQL queries to DPella's implementation. DPella will *inject noise to
@@ -42,7 +42,7 @@ purity) within their existing database workflows.
 We will zoom in into the architecture shown above with a concrete example that
 will be used in the rest of the report.
 
-![Two different runtimes](../fig/arch2.png)
+![Two different runtimes](./fig/arch2.png)
 
 The example focuses on SQL queries being able to call the Haskell function
 `dpellaSampleRandom` (implemented in [Noise.hs](../dpella-base/src/DPella/Noise.hs)) which
@@ -371,7 +371,7 @@ architecture and workflow for each engine, with their respective pros and cons.
 
 ### **5.1. SQLite**
 
-![SQlite workflow](../fig/sqlite-workflow.png)
+![SQlite workflow](./fig/sqlite-workflow.png)
 
 #### Overview
 The Haskell application (`app/Main.hs`) initializes and connects to an
@@ -452,7 +452,7 @@ created for the scope of the connection.
 
 ### **5.2. PostgreSQL**
 
-![PostgreSQL workflow](../fig/postgres-workflow.png)
+![PostgreSQL workflow](./fig/postgres-workflow.png)
 
 #### Overview
 
@@ -545,7 +545,7 @@ Haskell function `dpella_sample_random_hs` within the PostgreSQL process.
 
 ### **5.3. MySQL**
 
-![MySQL workflow](../fig/mysql-workflow.png)
+![MySQL workflow](./fig/mysql-workflow.png)
 
 #### Overview
 
