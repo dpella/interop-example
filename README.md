@@ -19,6 +19,10 @@ purpose, we provide a brief overview of the main components:
   covering the implementation details, including workflow descriptions, code
   snippets explanations and examples.
 
+- [Compilation to SQL](doc/examples-compilation.md): A collection of examples
+  showing how to compile DPella queries into optimized SQL for different
+  database engines, leveraging custom Haskell functions to inject noise.
+
 - [Dockerfile](./Dockerfile): A Dockerfile for building a containerized
   environment to run the examples and tests. Refer to the [Technical
   Report](doc/technical-report.md) for detailed instructions on how to build and
