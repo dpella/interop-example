@@ -10,22 +10,22 @@ process.
 This repository is organized into several directories, each serving a specific
 purpose, we provide a brief overview of the main components:
 
-- [Interoperability Report](doc/interoperability-report.md): A high-level
+- [Interoperability Report](docs/interoperability-report.md): A high-level
   overview of the integration process, focusing on the commonalities and
   differences between the integration into embedded (SQLite) and stand-alone
   (PostgreSQL and MySQL) databases.
 
-- [Technical Report](doc/technical-report.md): A detailed technical report
+- [Technical Report](docs/technical-report.md): A detailed technical report
   covering the implementation details, including workflow descriptions, code
   snippets explanations and examples.
 
-- [Compilation to SQL](doc/examples-compilation.md): A collection of examples
+- [Compilation to SQL](docs/examples-compilation.md): A collection of examples
   showing how to compile DPella queries into optimized SQL for different
   database engines, leveraging custom Haskell functions to inject noise.
 
 - [Dockerfile](./Dockerfile): A Dockerfile for building a containerized
   environment to run the examples and tests. Refer to the [Technical
-  Report](doc/technical-report.md) for detailed instructions on how to build and
+  Report](docs/technical-report.md) for detailed instructions on how to build and
   run the Docker container.
 
 - Implementation directories:
@@ -78,8 +78,8 @@ European Union nor the granting authority can be held responsible for them.
 Funded within the framework of the NGI Sargasso project under grant agreement No
 101092887.
 
-![NGI Sargasso](./doc/fig/logo-ngi-sargasso.png)
-![European Union](./doc/fig/logo-eu.png)
+![NGI Sargasso](./docs/fig/logo-ngi-sargasso.png)
+![European Union](./docs/fig/logo-eu.png)
 
 ## License
 This project is distributed under the Mozilla License. See the
