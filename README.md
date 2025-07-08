@@ -59,6 +59,16 @@ image, and run the examples for each database system (i.e., SQLite, PostgreSQL,
 and MySQL). Make sure you have [Docker Engine](https://docs.docker.com/engine/)
 installed your machine before executing the script.
 
+## Contributing
+We are excited about the potential of this project and are eager to see how it
+can evolve with the help of the community. If you have ideas, suggestions, or
+would like to contribute, please feel free to reach out to us at
+[dpdb@dpella.io](mailto:dpdb@dpella.io) or on [our website](https://dpella.io).
+
+### Bug reports
+Found a bug or have a feature request? Please open an issue
+[here](https://github.com/dpella/interop-example/issues).
+
 ## Acknowledgments
 
 Funded by the European Union. Views and opinions expressed are however those of
