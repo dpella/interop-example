@@ -1,0 +1,18 @@
+title: DPDB
+description: Exploring the connection between DP tools and SQL-based engines
+safe: true
+source: .
+incremental: false
+highlighter: rouge
+kramdown:
+  math_engine: mathjax
+  syntax_highlighter: rouge
+exclude: [
+  "Gemfile",
+  "Gemfile.lock",
+  "node_modules",
+  "vendor"
+]
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+- jekyll-remote-theme
